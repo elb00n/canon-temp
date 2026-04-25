@@ -1,0 +1,48 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Build / packaging output
+build/
+dist/
+*.egg-info/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# IDE / editor state
+.idea/
+
+# Local runtime outputs
+outputs/
+
+# Generated weights and exported models
+assets/weight/**
+!assets/weight/.gitkeep
+
+# Generated image datasets and intermediate artifacts
+images/agumentation_images/
+images/warped/
+images/target_images/
+images/yolo_dataset/
+images/sample_images_from_videos/
+images/cnn_train/
+
+# Optional local samples and media
+images/sample_video/
+
+# Logs
+*.log

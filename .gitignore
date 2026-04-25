@@ -1,0 +1,49 @@
+# backend Python cache
+backend/__pycache__/
+backend/*.py[cod]
+backend/*.pyd
+
+# backend Virtual environments
+backend/.venv/
+backend/venv/
+backend/env/
+
+# backend Tool caches
+backend/.pytest_cache/ 
+backend/.ruff_cache/
+backend/.mypy_cache/
+backend/.coverage
+backend/htmlcov/
+
+# backend Build / packaging output
+backend/build/
+backend/dist/
+backend/*.egg-info/
+
+# Notebook checkpoints
+backend/.ipynb_checkpoints/
+
+# IDE / editor state
+.idea/
+
+# Local runtime outputs
+backend/outputs/
+
+# Generated weights and exported models
+backend/assets/weight/**
+!backend/assets/weight/.gitkeep
+
+# Generated image datasets and intermediate artifacts
+backend/images/**
+!backend/images/.gitkeep
+
+# Optional local samples and media
+backend/images/sample_video/
+
+# Logs
+backend/*.log
+
+# images
+
+# frontend
+frontend/.env
