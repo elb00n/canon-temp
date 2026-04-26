@@ -17,6 +17,7 @@ from .sequence_service import (
 	TargetStepResult,
 	VideoSequenceSummary,
 )
+from .sequence_stream_service import SequenceStreamService, StreamRunConfig
 from .sequence_db import DEFAULT_DB_PATH, StoredSequenceRun, connect as connect_sequence_db, initialize as initialize_sequence_db, upsert_sequence_run
 from .video_service import (
 	VIDEO_EXTENSIONS,
@@ -38,6 +39,8 @@ __all__ = [
 	"TargetTestSummary",
 	"SequenceRunConfig",
 	"SequenceService",
+	"SequenceStreamService",
+	"StreamRunConfig",
 	"TargetContext",
 	"TargetStepResult",
 	"VideoSequenceSummary",

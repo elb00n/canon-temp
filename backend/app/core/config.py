@@ -30,6 +30,7 @@ CNN_OUTPUT_DIR = OUTPUTS_DIR / "cnn_train"
 YOLO_RUNS_DIR = OUTPUTS_DIR / "yolo_runs"
 TARGET_TEST_RUNS_DIR = OUTPUTS_DIR / "target_test_runs"
 SEQUENCE_VIDEO_RUNS_DIR = OUTPUTS_DIR / "sequence_video_runs"
+SEQUENCE_STREAM_RUNS_DIR = OUTPUTS_DIR / "sequence_stream_runs"
 VIDEO_NOISE_RUNS_DIR = OUTPUTS_DIR / "video_noise_runs"
 WARPING_TEST_RUNS_DIR = OUTPUTS_DIR / "warping_test_runs"
 TEMPLATE_MATCHER_RUNS_DIR = OUTPUTS_DIR / "template_matcher_v1"
@@ -119,6 +120,7 @@ class AppSettings:
 	target_test_runs_dir: Path = TARGET_TEST_RUNS_DIR
 	sequence_video_runs_dir: Path = SEQUENCE_VIDEO_RUNS_DIR
 	video_noise_runs_dir: Path = VIDEO_NOISE_RUNS_DIR
+	sequence_stream_runs_dir: Path = SEQUENCE_STREAM_RUNS_DIR
 	warping_test_runs_dir: Path = WARPING_TEST_RUNS_DIR
 	template_matcher_runs_dir: Path = TEMPLATE_MATCHER_RUNS_DIR
 
