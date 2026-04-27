@@ -89,6 +89,20 @@ async def on_startup() -> None:
 	init_compat_db(DB_PATH)
 	init_operational_db(DEFAULT_OPERATIONAL_DB_PATH)
 	asyncio.create_task(_broadcast_loop())
+
+	def _warmup() -> None:
+		service = get_operational_service("real")
+		dummy = build_synthetic_frame(scenario="normal_target1_accept")
+		service.infer_image(
+			dummy,
+			scenario="normal_target1_accept",
+			session_id="__warmup__",
+			reset_state=True,
+			save_artifacts=False,
+		)
+
+	logger.info("Warming up models on GPU...")
+	await asyncio.to_thread(_warmup)
 	logger.info("Canon backend ready. Operational DB: %s", DEFAULT_OPERATIONAL_DB_PATH)
 
 
