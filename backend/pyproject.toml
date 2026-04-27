@@ -4,13 +4,16 @@ version = "0.1.0"
 description = "Computer vision backend for screen detection, warping, and target classification"
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi>=0.115.0",
     "numpy>=2.4.4",
     "opencv-python>=4.13.0.92",
     "pillow>=12.2.0",
+    "python-multipart>=0.0.9",
     "torch>=2.11.0",
     "torchvision>=0.26.0",
     "ultralytics>=8.4.40",
     "openvino>=2026.1.0",
+    "uvicorn>=0.30.0",
 ]
 
 [dependency-groups]

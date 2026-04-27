@@ -46,3 +46,7 @@ images/sample_video/
 
 # Logs
 *.log
+
+# Local operational smoke database
+data/db/operational_runs.sqlite3*
+data/ultralytics/

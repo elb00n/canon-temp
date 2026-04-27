@@ -82,12 +82,15 @@ def load_target_model_handle(
 	if prefer_openvino:
 		openvino_model_path = resolve_target_openvino_model_path(target_name, target_root=target_root)
 		if openvino_model_path is not None:
-			return TargetModelHandle(
-				target_name=target_name,
-				backend="openvino",
-				weights=openvino_model_path,
-				model=load_openvino_target_model(openvino_model_path, device="CPU"),
-			)
+			try:
+				return TargetModelHandle(
+					target_name=target_name,
+					backend="openvino",
+					weights=openvino_model_path,
+					model=load_openvino_target_model(openvino_model_path, device="CPU"),
+				)
+			except (ImportError, RuntimeError):
+				pass
 
 	weight_path = resolve_target_weight_path(target_name, target_root=target_root)
 	return TargetModelHandle(

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from typing import Iterable
 
 import cv2
 import numpy as np
-from ultralytics import YOLO
+
+YOLO = None
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -239,6 +241,16 @@ class YoloScreenWarper:
 		contour_aspect_ratio_tolerance: float = DEFAULT_CONTOUR_ASPECT_RATIO_TOLERANCE,
 		classes: list[int] | None = None,
 	) -> None:
+		global YOLO
+		if YOLO is None:
+			yolo_config_dir = BASE_DIR / "data" / "ultralytics"
+			yolo_config_dir.mkdir(parents=True, exist_ok=True)
+			os.environ.setdefault("YOLO_CONFIG_DIR", str(yolo_config_dir))
+			try:
+				from ultralytics import YOLO as UltralyticsYOLO
+			except ImportError as exc:  # pragma: no cover - optional for mock smoke runs
+				raise RuntimeError("ultralytics is required for real YOLO detector inference") from exc
+			YOLO = UltralyticsYOLO
 		self.weights = Path(weights)
 		if not self.weights.exists():
 			raise FileNotFoundError(f"weights not found: {self.weights}")

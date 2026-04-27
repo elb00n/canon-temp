@@ -78,6 +78,29 @@ class SequenceDefaults:
 
 
 @dataclass(frozen=True, slots=True)
+class OperationalDefaults:
+	TARGET1_THRESHOLD: float = 0.90
+	TARGET2_THRESHOLD: float = 0.75
+	TARGET3_THRESHOLD: float = 0.90
+	TARGET4_THRESHOLD: float = 0.90
+	DECISION_MARGIN: float = 0.08
+	DELTA_ACCEPT: float = 0.05
+	REINSPECT_WINDOW: int = 3
+	DETECTOR_CONFIDENCE_THRESHOLD: float = 0.50
+	PREPROCESS_OUTPUT_SIZE: int = 640
+	PREPROCESS_PADDING_RATIO: float = 0.02
+
+	@property
+	def thresholds(self) -> dict[str, float]:
+		return {
+			"Target1": self.TARGET1_THRESHOLD,
+			"Target2": self.TARGET2_THRESHOLD,
+			"Target3": self.TARGET3_THRESHOLD,
+			"Target4": self.TARGET4_THRESHOLD,
+		}
+
+
+@dataclass(frozen=True, slots=True)
 class NoiseDefaults:
 	preset: str = "fast"
 	segment_seconds: float = 10.0
@@ -130,6 +153,7 @@ class AppSettings:
 	default_asset_yolo_weights: Path = DEFAULT_ASSET_YOLO_WEIGHTS
 	training: TrainingDefaults = TrainingDefaults()
 	sequence: SequenceDefaults = SequenceDefaults()
+	operational: OperationalDefaults = OperationalDefaults()
 	noise: NoiseDefaults = NoiseDefaults()
 
 
