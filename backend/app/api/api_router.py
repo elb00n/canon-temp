@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.api.payload_mapper import operational_response_to_log
+from app.api.ws_router import disconnect_source
 from app.core.paths import OUTPUTS_DIR
 from app.service.operational_db import DEFAULT_OPERATIONAL_DB_PATH
 from app.service.operational_runtime import decode_image_bytes, get_operational_service, load_video_frames
@@ -178,6 +179,15 @@ def override_camera(body: OverrideRequest) -> JSONResponse:
 		extra={"logic": body.logic, "display": body.display},
 	)
 	return JSONResponse({"status": "ok", "cam_id": body.cam_id, "log_id": log_id})
+
+
+@router.post("/cameras/{cam_id}/disconnect")
+async def disconnect_camera(cam_id: str) -> JSONResponse:
+	"""Force-disconnect a streaming source (e.g. mobile camera) from the dashboard."""
+	ok = await disconnect_source(cam_id)
+	if not ok:
+		raise HTTPException(status_code=404, detail=f"camera not connected: {cam_id}")
+	return JSONResponse({"status": "ok", "cameraId": cam_id})
 
 
 @router.post("/inspect-image")

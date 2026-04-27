@@ -680,6 +680,23 @@ async def ws_main(ws: WebSocket) -> None:
 		logger.info("WS client disconnected. total=%d", manager.count())
 
 
+# source ws를 cameraId별로 추적해 외부에서 강제로 끊을 수 있게 함.
+_source_sockets: dict[str, WebSocket] = {}
+_source_sockets_lock = threading.Lock()
+
+
+async def disconnect_source(cam_id: str) -> bool:
+	with _source_sockets_lock:
+		ws = _source_sockets.get(cam_id)
+	if ws is None:
+		return False
+	try:
+		await ws.close(code=1000)
+	except Exception:
+		logger.exception("failed to close source ws for %s", cam_id)
+	return True
+
+
 @router.websocket("/ws/source")
 async def ws_source(ws: WebSocket) -> None:
 	await ws.accept()
@@ -689,6 +706,14 @@ async def ws_source(ws: WebSocket) -> None:
 	default_scenario = ws.query_params.get("scenario", "normal_target2_accept")
 	default_strict_sequence = _parse_bool(ws.query_params.get("strict_sequence"), default=True)
 	camera_store.register(cam_id, reset_session=True)
+	with _source_sockets_lock:
+		previous = _source_sockets.get(cam_id)
+		_source_sockets[cam_id] = ws
+	if previous is not None and previous is not ws:
+		try:
+			await previous.close(code=1000)
+		except Exception:
+			pass
 
 	await manager.broadcast(json.dumps({"type": "camera_list", "cameras": camera_store.camera_ids()}))
 	logger.info("Mobile source connected as %s", cam_id)
@@ -707,6 +732,9 @@ async def ws_source(ws: WebSocket) -> None:
 	except WebSocketDisconnect:
 		pass
 	finally:
+		with _source_sockets_lock:
+			if _source_sockets.get(cam_id) is ws:
+				_source_sockets.pop(cam_id, None)
 		camera_store.unregister(cam_id)
 		await manager.broadcast(json.dumps({"type": "camera_list", "cameras": camera_store.camera_ids()}))
 		logger.info("Mobile source disconnected. %s unregistered.", cam_id)
@@ -733,6 +761,7 @@ __all__ = [
 	"CAM_WS_SOURCE",
 	"_broadcast_loop",
 	"camera_store",
+	"disconnect_source",
 	"manager",
 	"push_frame",
 	"push_inference_state",

@@ -4,7 +4,7 @@ import {
   Camera, Settings, Activity, BoxSelect, Cpu, ScanSearch, CheckCircle2,
   Video, XCircle, Globe, X, Image as ImageIcon, Server, ShieldAlert,
   Database, RefreshCw, Save, ChevronRight, ChevronLeft,
-  Lock
+  Lock, PowerOff
 } from "lucide-react";
 import { useAppStore } from "./store";
 import type { ImageLog, CameraData, VideoFrameResult, ImageInspection } from "./store";
@@ -163,8 +163,24 @@ function CameraPanel({
         </div>
         <div className="flex items-center gap-2 font-mono text-[#64748b] text-[10px]">
           {!isSplit && <span>60fps</span>}
+          {cameraId !== 'CAM_00' && latestData?.inference && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!confirm(`[${cameraId}] 카메라 송출을 종료할까요?`)) return;
+                fetch(`/api/cameras/${encodeURIComponent(cameraId)}/disconnect`, { method: 'POST' })
+                  .then((resp) => { if (!resp.ok) throw new Error(`HTTP ${resp.status}`); })
+                  .catch((err) => { console.error(err); alert('송출 종료에 실패했습니다.'); });
+              }}
+              title="이 카메라의 송출을 강제로 종료합니다"
+              className="flex items-center gap-1 px-1.5 py-0.5 border border-transparent hover:border-[#CC0000] text-[#64748b] hover:text-[#CC0000] transition-colors"
+            >
+              <PowerOff size={11} />
+              <span className="text-[10px]">끊기</span>
+            </button>
+          )}
           {isSplit && onRemove && (
-            <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="text-[#64748b] hover:text-red-400 px-1">✕</button>
+            <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="text-[#64748b] hover:text-red-400 px-1" title="이 카메라를 분할 화면에서 제거">✕</button>
           )}
         </div>
       </div>
