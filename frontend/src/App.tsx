@@ -1932,6 +1932,33 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen w-full bg-[#f5f7fb] text-[#1f2937]">
       {sourceMode && <MobileSourceView onExit={() => setSourceMode(false)} />}
+
+      {/* 모바일 환영 화면 — 데스크톱 대시보드는 폭이 좁은 화면에선 보이지 않게 가리고
+          이 화면을 풀스크린으로 띄움. 사용자는 휴대폰을 카메라로 쓰거나 PC에서 보라는
+          안내만 받음. md(768px) 이상에서는 자동으로 숨겨져 일반 대시보드가 보인다. */}
+      {!sourceMode && (
+        <div className="md:hidden fixed inset-0 z-[120] bg-white flex flex-col items-center justify-center px-6 py-10">
+          <div className="w-full max-w-sm flex flex-col items-center text-center">
+            <div className="text-3xl font-black text-[#CC0000] tracking-tighter mb-2">Canon</div>
+            <h1 className="text-xl font-black text-[#111827] mb-2">스마트 검사 시스템</h1>
+            <p className="text-sm text-[#64748b] mb-10 leading-relaxed">
+              이 휴대폰을 검사 카메라로 사용하거나,<br />
+              PC 모니터에서 결과를 확인하세요.
+            </p>
+            <button
+              onClick={() => setSourceMode(true)}
+              className="w-full bg-[#CC0000] hover:bg-[#a30000] text-white py-5 px-6 font-black text-lg shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-transform"
+            >
+              <Video size={24} />
+              이 휴대폰으로 검사 시작
+            </button>
+            <div className="mt-10 text-[11px] text-[#94a3b8] leading-relaxed">
+              상세 모니터링과 관리 기능은 <span className="font-bold text-[#64748b]">PC 모니터</span>에서 가장 잘 보입니다.
+            </div>
+          </div>
+        </div>
+      )}
+
       <SettingsModal />
       <AdminModal />
       <TestModeModal />
