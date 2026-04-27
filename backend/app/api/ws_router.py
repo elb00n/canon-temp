@@ -29,7 +29,7 @@ router = APIRouter()
 FRAME_BROADCAST_INTERVAL = 0.1
 STATE_BROADCAST_INTERVAL = 0.5
 INFERENCE_MIN_INTERVAL = 0.35
-JPEG_QUALITY = 60
+JPEG_QUALITY = 90
 CAM_WS_SOURCE = "CAM_WS"
 
 
@@ -85,8 +85,10 @@ class CameraState:
 	allowed_transition: bool = True
 	system_message: str = "WAITING..."
 	last_frame: Any = field(default=None, repr=False)
+	last_frame_jpeg: str | None = field(default=None, repr=False)
 	last_frame_time: float = 0.0
 	last_inference_time: float = 0.0
+	inference_running: bool = False
 	frame_index: int = 0
 	latest_payload: dict[str, Any] | None = field(default=None, repr=False)
 
@@ -136,13 +138,14 @@ class CameraStateStore:
 		with self._lock:
 			self._cameras.pop(cam_id, None)
 
-	def update_frame(self, cam_id: str, frame_bgr: Any) -> None:
+	def update_frame(self, cam_id: str, frame_bgr: Any, frame_jpeg: str | None = None) -> None:
 		with self._lock:
 			state = self._cameras.get(cam_id)
 			if state is None:
 				state = self._new_state(cam_id)
 				self._cameras[cam_id] = state
 			state.last_frame = frame_bgr.copy()
+			state.last_frame_jpeg = frame_jpeg
 			state.last_frame_time = time.monotonic()
 
 	def prepare_inference(
@@ -163,12 +166,21 @@ class CameraStateStore:
 				if state.session_id != session_id:
 					state.frame_index = 0
 				state.session_id = session_id
+			if state.inference_running:
+				return state.session_id, state.frame_index, False, False
 			if now - state.last_inference_time < min_interval:
 				return state.session_id, state.frame_index, False, False
 			frame_index = state.frame_index
 			state.frame_index += 1
 			state.last_inference_time = now
+			state.inference_running = True
 			return state.session_id, frame_index, frame_index == 0 or reset_session, True
+
+	def finish_inference(self, cam_id: str, session_id: str) -> None:
+		with self._lock:
+			state = self._cameras.get(cam_id)
+			if state is not None and state.session_id == session_id:
+				state.inference_running = False
 
 	def update_payload(self, cam_id: str, payload: dict[str, Any]) -> None:
 		with self._lock:
@@ -176,22 +188,33 @@ class CameraStateStore:
 			if state is None:
 				state = self._new_state(cam_id)
 				self._cameras[cam_id] = state
-			state.latest_payload = payload
-			state.predicted_label = str(payload.get("predicted_label", "unknown"))
-			state.final_label = str(payload.get("final_label", "unknown"))
-			state.confidence = float(payload.get("confidence") or 0.0)
-			state.confirmed_state = str(payload.get("confirmed_state", "Analyzing"))
-			state.is_unknown = bool(payload.get("is_unknown"))
-			state.ambiguous = bool(payload.get("ambiguous"))
-			state.reinspect_needed = bool(payload.get("reinspect_needed"))
-			state.inference = bool(payload.get("inference", True))
-			state.allowed_transition = bool(payload.get("allowed_transition"))
-			logic = payload.get("logic")
-			if isinstance(logic, dict):
-				state.current_step_index = int(logic.get("current_step_index") or state.current_step_index)
-			display = payload.get("display")
-			if isinstance(display, dict):
-				state.system_message = str(display.get("system_message") or state.system_message)
+			self._apply_payload(state, payload)
+
+	def update_payload_if_current(self, cam_id: str, session_id: str, payload: dict[str, Any]) -> bool:
+		with self._lock:
+			state = self._cameras.get(cam_id)
+			if state is None or state.session_id != session_id:
+				return False
+			self._apply_payload(state, payload)
+			return True
+
+	def _apply_payload(self, state: CameraState, payload: dict[str, Any]) -> None:
+		state.latest_payload = payload
+		state.predicted_label = str(payload.get("predicted_label", "unknown"))
+		state.final_label = str(payload.get("final_label", "unknown"))
+		state.confidence = float(payload.get("confidence") or 0.0)
+		state.confirmed_state = str(payload.get("confirmed_state", "Analyzing"))
+		state.is_unknown = bool(payload.get("is_unknown"))
+		state.ambiguous = bool(payload.get("ambiguous"))
+		state.reinspect_needed = bool(payload.get("reinspect_needed"))
+		state.inference = bool(payload.get("inference", True))
+		state.allowed_transition = bool(payload.get("allowed_transition"))
+		logic = payload.get("logic")
+		if isinstance(logic, dict):
+			state.current_step_index = int(logic.get("current_step_index") or state.current_step_index)
+		display = payload.get("display")
+		if isinstance(display, dict):
+			state.system_message = str(display.get("system_message") or state.system_message)
 
 	def update_inference(self, cam_id: str, **kwargs: Any) -> None:
 		with self._lock:
@@ -214,6 +237,13 @@ class CameraStateStore:
 			state = self._cameras.get(cam_id)
 			if state and state.last_frame is not None:
 				return state.last_frame.copy()
+			return None
+
+	def get_frame_jpeg(self, cam_id: str) -> str | None:
+		with self._lock:
+			state = self._cameras.get(cam_id)
+			if state and state.last_frame_jpeg:
+				return state.last_frame_jpeg
 			return None
 
 
@@ -241,6 +271,12 @@ def _decode_frame_text(data: str) -> Any:
 	return frame_bgr
 
 
+def _frame_text_to_base64(data: str) -> str:
+	if "," in data:
+		return data.split(",", 1)[1]
+	return data
+
+
 def _parse_target_order(value: Any) -> list[str] | None:
 	if value is None:
 		return None
@@ -249,6 +285,22 @@ def _parse_target_order(value: Any) -> list[str] | None:
 	if isinstance(value, str):
 		return [part.strip() for part in value.split(",") if part.strip()]
 	return None
+
+
+def _parse_bool(value: Any, *, default: bool = False) -> bool:
+	if value is None:
+		return default
+	if isinstance(value, bool):
+		return value
+	if isinstance(value, (int, float)):
+		return bool(value)
+	if isinstance(value, str):
+		text = value.strip().lower()
+		if text in {"1", "true", "yes", "y", "on"}:
+			return True
+		if text in {"0", "false", "no", "n", "off"}:
+			return False
+	return default
 
 
 def _extract_frame_envelope(raw_text: str, *, default_cam_id: str) -> dict[str, Any]:
@@ -308,6 +360,7 @@ async def _process_frame_envelope(
 	*,
 	default_model_mode: str,
 	default_scenario: str,
+	default_strict_sequence: bool = True,
 ) -> dict[str, Any] | None:
 	frame_text = envelope.get("frame")
 	if not isinstance(frame_text, str) or not frame_text:
@@ -316,7 +369,7 @@ async def _process_frame_envelope(
 	camera_id = str(envelope.get("camera_id") or CAM_WS_SOURCE)
 	frame_bgr = _decode_frame_text(frame_text)
 	camera_store.register(camera_id)
-	camera_store.update_frame(camera_id, frame_bgr)
+	camera_store.update_frame(camera_id, frame_bgr, _frame_text_to_base64(frame_text))
 
 	model_mode = normalize_model_mode(str(envelope.get("model_mode") or default_model_mode))
 	scenario = str(envelope.get("scenario") or default_scenario)
@@ -325,7 +378,7 @@ async def _process_frame_envelope(
 		now=time.monotonic(),
 		min_interval=INFERENCE_MIN_INTERVAL,
 		session_id=str(envelope.get("session_id") or "") or None,
-		reset_session=bool(envelope.get("reset_state")),
+		reset_session=_parse_bool(envelope.get("reset_state")),
 	)
 	if not should_infer:
 		return None
@@ -342,7 +395,7 @@ async def _process_frame_envelope(
 				session_id=session_id,
 				frame_index=frame_index,
 				target_order=_parse_target_order(envelope.get("target_order")),
-				strict_sequence=bool(envelope.get("strict_sequence")),
+				strict_sequence=_parse_bool(envelope.get("strict_sequence"), default=default_strict_sequence),
 				reset_state=first_frame,
 				save_artifacts=envelope.get("save_artifacts"),
 			),
@@ -369,10 +422,126 @@ async def _process_frame_envelope(
 			},
 			"display": {"system_message": "BACKEND ERROR"},
 		}
+	finally:
+		camera_store.finish_inference(camera_id, session_id)
 
-	camera_store.update_payload(camera_id, payload)
-	await manager.broadcast(json.dumps([{"cameraId": camera_id, "payload": payload}]))
+	if camera_store.update_payload_if_current(camera_id, session_id, payload):
+		await manager.broadcast(json.dumps([{"cameraId": camera_id, "payload": payload}]))
 	return payload
+
+
+async def _run_inference_task(
+	*,
+	camera_id: str,
+	frame_bgr: Any,
+	model_mode: str,
+	scenario: str,
+	session_id: str,
+	frame_index: int,
+	target_order: list[str] | None,
+	strict_sequence: bool,
+	reset_state: bool,
+	save_artifacts: bool | None,
+	reply_ws: WebSocket | None = None,
+) -> None:
+	try:
+		loop = asyncio.get_running_loop()
+		response = await loop.run_in_executor(
+			None,
+			partial(
+				_infer_frame_sync,
+				frame_bgr,
+				model_mode=model_mode,
+				scenario=scenario,
+				session_id=session_id,
+				frame_index=frame_index,
+				target_order=target_order,
+				strict_sequence=strict_sequence,
+				reset_state=reset_state,
+				save_artifacts=save_artifacts,
+			),
+		)
+		payload = operational_result_to_frontend_payload(response)
+	except Exception as exc:
+		logger.exception("stream inference failed for %s", camera_id)
+		payload = {
+			"predicted_label": "error",
+			"final_label": "unknown",
+			"confidence": 0.0,
+			"confirmed_state": "Error",
+			"allowed_transition": False,
+			"inference": True,
+			"is_unknown": True,
+			"ambiguous": False,
+			"reinspect_needed": False,
+			"logic": {
+				"current_step_index": 1,
+				"confirmed_state": "Error",
+				"allowed_transition": False,
+				"confidence": 0.0,
+				"error": str(exc),
+			},
+			"display": {"system_message": "BACKEND ERROR"},
+		}
+	finally:
+		camera_store.finish_inference(camera_id, session_id)
+
+	if not camera_store.update_payload_if_current(camera_id, session_id, payload):
+		return
+
+	await manager.broadcast(json.dumps([{"cameraId": camera_id, "payload": payload}]))
+	if reply_ws is not None:
+		try:
+			await reply_ws.send_text(json.dumps({"type": "inference", "cameraId": camera_id, "payload": payload}))
+		except Exception:
+			pass
+
+
+async def _enqueue_frame_envelope(
+	envelope: dict[str, Any],
+	*,
+	default_model_mode: str,
+	default_scenario: str,
+	default_strict_sequence: bool = True,
+	reply_ws: WebSocket | None = None,
+) -> bool:
+	frame_text = envelope.get("frame")
+	if not isinstance(frame_text, str) or not frame_text:
+		return False
+
+	camera_id = str(envelope.get("camera_id") or CAM_WS_SOURCE)
+	frame_bgr = _decode_frame_text(frame_text)
+	camera_store.register(camera_id)
+	camera_store.update_frame(camera_id, frame_bgr, _frame_text_to_base64(frame_text))
+
+	model_mode = normalize_model_mode(str(envelope.get("model_mode") or default_model_mode))
+	scenario = str(envelope.get("scenario") or default_scenario)
+	session_id, frame_index, first_frame, should_infer = camera_store.prepare_inference(
+		camera_id,
+		now=time.monotonic(),
+		min_interval=INFERENCE_MIN_INTERVAL,
+		session_id=str(envelope.get("session_id") or "") or None,
+		reset_session=_parse_bool(envelope.get("reset_state")),
+	)
+	if not should_infer:
+		return False
+
+	asyncio.create_task(
+		_run_inference_task(
+			camera_id=camera_id,
+			frame_bgr=frame_bgr.copy(),
+			model_mode=model_mode,
+			scenario=scenario,
+			session_id=session_id,
+			frame_index=frame_index,
+			target_order=_parse_target_order(envelope.get("target_order")),
+			strict_sequence=_parse_bool(envelope.get("strict_sequence"), default=default_strict_sequence),
+			reset_state=first_frame,
+			save_artifacts=envelope.get("save_artifacts"),
+			reply_ws=reply_ws,
+		)
+	)
+	return True
 
 
 async def _broadcast_loop() -> None:
@@ -388,12 +557,15 @@ async def _broadcast_loop() -> None:
 		now = time.monotonic()
 
 		for cam_id in cam_ids:
-			frame = camera_store.get_frame(cam_id)
-			if frame is None:
-				continue
+			frame_jpeg = camera_store.get_frame_jpeg(cam_id)
+			if frame_jpeg is None:
+				frame = camera_store.get_frame(cam_id)
+				if frame is None:
+					continue
+				frame_jpeg = _encode_frame(frame)
 			try:
 				await manager.broadcast(
-					json.dumps({"type": "video_frame", "cameraId": cam_id, "frame": _encode_frame(frame)})
+					json.dumps({"type": "video_frame", "cameraId": cam_id, "frame": frame_jpeg})
 				)
 			except Exception as exc:
 				logger.warning("frame broadcast error for %s: %s", cam_id, exc)
@@ -418,27 +590,19 @@ async def ws_main(ws: WebSocket) -> None:
 
 	default_model_mode = ws.query_params.get("model_mode", "real")
 	default_scenario = ws.query_params.get("scenario", "normal_target2_accept")
+	default_strict_sequence = _parse_bool(ws.query_params.get("strict_sequence"), default=True)
 
 	try:
 		while True:
 			raw_text = await ws.receive_text()
 			envelope = _extract_frame_envelope(raw_text, default_cam_id=CAM_WS_SOURCE)
 			if envelope.get("frame"):
-				payload = await _process_frame_envelope(
+				await _enqueue_frame_envelope(
 					envelope,
 					default_model_mode=default_model_mode,
 					default_scenario=default_scenario,
+					default_strict_sequence=default_strict_sequence,
 				)
-				if payload is not None:
-					await ws.send_text(
-						json.dumps(
-							{
-								"type": "inference",
-								"cameraId": envelope.get("camera_id") or CAM_WS_SOURCE,
-								"payload": payload,
-							}
-						)
-					)
 	except WebSocketDisconnect:
 		pass
 	finally:
@@ -453,6 +617,7 @@ async def ws_source(ws: WebSocket) -> None:
 	cam_id = ws.query_params.get("cameraId") or ws.query_params.get("cam_id") or CAM_WS_SOURCE
 	default_model_mode = ws.query_params.get("model_mode", "real")
 	default_scenario = ws.query_params.get("scenario", "normal_target2_accept")
+	default_strict_sequence = _parse_bool(ws.query_params.get("strict_sequence"), default=True)
 	camera_store.register(cam_id, reset_session=True)
 
 	await manager.broadcast(json.dumps({"type": "camera_list", "cameras": camera_store.camera_ids()}))
@@ -462,13 +627,13 @@ async def ws_source(ws: WebSocket) -> None:
 		while True:
 			raw_text = await ws.receive_text()
 			envelope = _extract_frame_envelope(raw_text, default_cam_id=cam_id)
-			payload = await _process_frame_envelope(
+			await _enqueue_frame_envelope(
 				envelope,
 				default_model_mode=default_model_mode,
 				default_scenario=default_scenario,
+				default_strict_sequence=default_strict_sequence,
+				reply_ws=ws,
 			)
-			if payload is not None:
-				await ws.send_text(json.dumps({"type": "inference", "cameraId": envelope["camera_id"], "payload": payload}))
 	except WebSocketDisconnect:
 		pass
 	finally:

@@ -162,7 +162,7 @@ function CameraPanel({
             />
           ) : (
             <>
-              <img id={`video-stream-${cameraId}`} className="absolute inset-0 w-full h-full object-cover hidden opacity-85 z-0" alt={cameraId} />
+              <img id={`video-stream-${cameraId}`} className="absolute inset-0 w-full h-full object-contain hidden opacity-100 z-0" alt={cameraId} />
               {!latestData?.inference && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-30 z-10">
                   <Activity size={isSplit ? 28 : 48} className="text-zinc-500 mb-2" />
@@ -892,9 +892,9 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
   const [modelMode, setModelMode] = useState<StreamModelMode>('real');
   const [scenario, setScenario] = useState('normal_target2_accept');
   const [targetOrder, setTargetOrder] = useState('Target1,Target2,Target3,Target4');
-  const [sampleMs, setSampleMs] = useState(500);
-  const [frameWidth, setFrameWidth] = useState(320);
-  const [jpegQuality, setJpegQuality] = useState(0.6);
+  const [sampleMs, setSampleMs] = useState(350);
+  const [frameWidth, setFrameWidth] = useState(1280);
+  const [jpegQuality, setJpegQuality] = useState(0.9);
   const [saveArtifacts, setSaveArtifacts] = useState(false);
   const [stats, setStats] = useState({
     sent: 0,
@@ -920,7 +920,12 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
     async function startCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: 1280, height: 720 },
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30, max: 30 },
+          },
           audio: false,
         });
         if (videoRef.current) {
@@ -966,6 +971,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
       model_mode: modelMode,
       scenario,
       target_order: parseTargetOrder(targetOrder),
+      strict_sequence: true,
       save_artifacts: saveArtifacts,
       reset_state: nextSent === 1,
     }));
@@ -1079,11 +1085,11 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1">
               <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Sample ms</span>
-              <input type="number" min={150} max={2000} step={50} disabled={streaming} value={sampleMs} onChange={(e) => setSampleMs(Number(e.target.value) || 500)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
+              <input type="number" min={150} max={2000} step={50} disabled={streaming} value={sampleMs} onChange={(e) => setSampleMs(Number(e.target.value) || 350)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
             </label>
             <label className="block space-y-1">
               <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Width</span>
-              <input type="number" min={224} max={960} step={32} disabled={streaming} value={frameWidth} onChange={(e) => setFrameWidth(Number(e.target.value) || 320)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
+              <input type="number" min={224} max={1920} step={64} disabled={streaming} value={frameWidth} onChange={(e) => setFrameWidth(Number(e.target.value) || 1280)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
             </label>
           </div>
 
@@ -1092,7 +1098,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
               <span>JPEG Quality</span>
               <span>{Math.round(jpegQuality * 100)}%</span>
             </div>
-            <input type="range" min={0.3} max={0.9} step={0.05} disabled={streaming} value={jpegQuality} onChange={(e) => setJpegQuality(Number(e.target.value))} className="w-full accent-[#E50012]" />
+            <input type="range" min={0.5} max={0.95} step={0.05} disabled={streaming} value={jpegQuality} onChange={(e) => setJpegQuality(Number(e.target.value))} className="w-full accent-[#E50012]" />
           </label>
 
           <label className="flex items-center justify-between bg-[#18181b] border border-[#3f3f46] px-3 py-3">
