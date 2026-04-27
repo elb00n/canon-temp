@@ -43,7 +43,7 @@ function LivenessIndicator() {
       {speeds.map((speed, i) => (
         <div
           key={i}
-          className="w-[3px] bg-[#22c55e]"
+          className="w-[3px] bg-[#16a34a]"
           style={{
             height: '3px',
             animation: `liveness-bar ${speed}s ease-in-out infinite alternate`,
@@ -63,19 +63,19 @@ function ImagePanel({
 }) {
   const { language } = useAppStore();
   const t = locales[language];
-  const sc = img.status === 'success' ? '#22c55e' : img.status === 'error' ? '#ef4444' : '#f59e0b';
+  const sc = img.status === 'success' ? '#16a34a' : img.status === 'error' ? '#dc2626' : '#d97706';
   return (
-    <section className="flex flex-col bg-[#27272a] border border-[#3f3f46] shadow-lg h-full overflow-hidden relative">
-      <div className={`flex justify-between items-center bg-[#3f3f46] px-2 border-b border-[#52525b] ${isSplit ? 'py-1' : 'py-2'}`}>
+    <section className="flex flex-col bg-[#f8fafc] border border-[#d9e1ec] shadow-lg h-full overflow-hidden relative">
+      <div className={`flex justify-between items-center bg-[#d9e1ec] px-2 border-b border-[#c5cfdd] ${isSplit ? 'py-1' : 'py-2'}`}>
         <div className="flex items-center gap-2">
-          <ImageIcon size={14} className="text-[#E50012]" />
-          <h2 className="font-semibold tracking-wide text-zinc-100 text-xs">{img.id}</h2>
+          <ImageIcon size={14} className="text-[#CC0000]" />
+          <h2 className="font-semibold tracking-wide text-[#111827] text-xs">{img.id}</h2>
         </div>
-        <div className="flex items-center gap-2 font-mono text-zinc-400 text-[10px]">
-          <span className="px-1.5 py-0.5 border border-zinc-600">T{img.target_idx}</span>
+        <div className="flex items-center gap-2 font-mono text-[#64748b] text-[10px]">
+          <span className="px-1.5 py-0.5 border border-[#c5cfdd]">T{img.target_idx}</span>
           <span>{img.cam}</span>
           {isSplit && onRemove && (
-            <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="ml-1 text-zinc-500 hover:text-red-400 px-1">✕</button>
+            <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="ml-1 text-[#64748b] hover:text-red-400 px-1">✕</button>
           )}
         </div>
       </div>
@@ -88,28 +88,28 @@ function ImagePanel({
             <img src={img.image_url} alt={img.id} className="w-full h-full object-contain" />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center opacity-40">
-              <ImageIcon size={isSplit ? 28 : 48} className="text-zinc-500 mb-2" />
-              <span className="font-mono text-zinc-500 text-sm">NO IMAGE</span>
+              <ImageIcon size={isSplit ? 28 : 48} className="text-[#64748b] mb-2" />
+              <span className="font-mono text-[#64748b] text-sm">NO IMAGE</span>
             </div>
           )}
         </div>
-        <div className="absolute top-2 left-2 bg-[#18181b]/90 px-2 py-0.5 border border-[#3f3f46] font-mono text-zinc-300 z-10 text-[10px]">{img.cam}</div>
-        <div className="absolute top-2 right-2 bg-[#18181b]/90 px-2 py-0.5 border font-mono z-10 text-[10px]" style={{ borderColor: sc, color: sc }}>T{img.target_idx} · {img.reason}</div>
+        <div className="absolute top-2 left-2 bg-[#ffffff]/90 px-2 py-0.5 border border-[#d9e1ec] font-mono text-[#334155] z-10 text-[10px]">{img.cam}</div>
+        <div className="absolute top-2 right-2 bg-[#ffffff]/90 px-2 py-0.5 border font-mono z-10 text-[10px]" style={{ borderColor: sc, color: sc }}>T{img.target_idx} · {img.reason}</div>
         <div className="absolute bottom-3 inset-x-0 flex justify-center z-10 pointer-events-none">
-          <div className="px-4 py-1 border text-sm font-black uppercase tracking-widest bg-[#18181b]/90" style={{ color: sc, borderColor: sc }}>
+          <div className="px-4 py-1 border text-sm font-black uppercase tracking-widest bg-[#ffffff]/90" style={{ color: sc, borderColor: sc }}>
             {img.status === 'success' ? t.statusSuccess : img.status === 'error' ? t.statusError : t.statusProcessing}
           </div>
         </div>
-        <div className="absolute bottom-1 right-2 text-[8px] text-zinc-800 font-mono z-10 pointer-events-none">더블클릭 • 상세보기</div>
+        <div className="absolute bottom-1 right-2 text-[8px] text-[#cbd5e1] font-mono z-10 pointer-events-none">더블클릭 • 상세보기</div>
       </div>
-      <div className={`bg-[#27272a] border-t border-[#3f3f46] flex ${isSplit ? 'p-0.5 gap-0.5' : 'p-1.5 gap-1.5'}`}>
+      <div className={`bg-[#f8fafc] border-t border-[#d9e1ec] flex ${isSplit ? 'p-0.5 gap-0.5' : 'p-1.5 gap-1.5'}`}>
         {[1, 2, 3, 4].map((s) => {
           const isTarget = s === img.target_idx;
           const style = isTarget
-            ? img.status === 'success' ? 'border-[#22c55e] bg-[#22c55e]/15 text-[#22c55e]'
-            : img.status === 'error' ? 'border-[#ef4444] bg-[#ef4444]/15 text-[#ef4444]'
-            : 'border-[#f59e0b] bg-[#f59e0b]/15 text-[#f59e0b] animate-pulse'
-            : 'border-[#52525b] bg-zinc-800/30 text-zinc-600 opacity-50';
+            ? img.status === 'success' ? 'border-[#16a34a] bg-[#16a34a]/15 text-[#16a34a]'
+            : img.status === 'error' ? 'border-[#dc2626] bg-[#dc2626]/15 text-[#dc2626]'
+            : 'border-[#d97706] bg-[#d97706]/15 text-[#d97706] animate-pulse'
+            : 'border-[#c5cfdd] bg-[#eef2f7]/30 text-[#94a3b8] opacity-50';
           return (
             <div key={s} className={`flex-1 border flex items-center justify-between relative transition-all px-1.5 py-1 ${style}`}>
               <span className="text-[9px] font-bold tracking-wider">T{s}</span>
@@ -138,17 +138,17 @@ function CameraPanel({
     { id: 4, title: 'T4', icon: CheckCircle2 },
   ];
   return (
-    <section className="flex flex-col bg-[#27272a] border border-[#3f3f46] shadow-lg h-full overflow-hidden relative">
-      <div className={`flex justify-between items-center bg-[#3f3f46] px-2 border-b border-[#52525b] ${isSplit ? 'py-1' : 'py-2'}`}>
+    <section className="flex flex-col bg-[#f8fafc] border border-[#d9e1ec] shadow-lg h-full overflow-hidden relative">
+      <div className={`flex justify-between items-center bg-[#d9e1ec] px-2 border-b border-[#c5cfdd] ${isSplit ? 'py-1' : 'py-2'}`}>
         <div className="flex items-center gap-2">
-          <Camera size={14} className="text-[#E50012]" />
-          <h2 className="font-semibold tracking-wide text-zinc-100 text-xs">{cameraId}</h2>
-          {!isSplit && <span className="text-zinc-500 text-[10px] font-mono truncate max-w-[160px]">{title}</span>}
+          <Camera size={14} className="text-[#CC0000]" />
+          <h2 className="font-semibold tracking-wide text-[#111827] text-xs">{cameraId}</h2>
+          {!isSplit && <span className="text-[#64748b] text-[10px] font-mono truncate max-w-[160px]">{title}</span>}
         </div>
-        <div className="flex items-center gap-2 font-mono text-zinc-400 text-[10px]">
+        <div className="flex items-center gap-2 font-mono text-[#64748b] text-[10px]">
           {!isSplit && <span>60fps</span>}
           {isSplit && onRemove && (
-            <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="text-zinc-500 hover:text-red-400 px-1">✕</button>
+            <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="text-[#64748b] hover:text-red-400 px-1">✕</button>
           )}
         </div>
       </div>
@@ -156,7 +156,7 @@ function CameraPanel({
         className="flex-1 relative flex items-center justify-center overflow-hidden bg-black cursor-pointer select-none"
         onDoubleClick={onOpenDetail}
       >
-        <div className="relative bg-zinc-900/40 flex items-center justify-center w-full max-h-full" style={{ aspectRatio: '16/9', maxHeight: '100%', maxWidth: '100%' }}>
+        <div className="relative bg-[#e2e8f0]/40 flex items-center justify-center w-full max-h-full" style={{ aspectRatio: '16/9', maxHeight: '100%', maxWidth: '100%' }}>
           {cameraId === 'CAM_00' ? (
             <iframe 
               src={(latestData?.display as any)?.url || "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1"}
@@ -169,40 +169,40 @@ function CameraPanel({
               <img id={`video-stream-${cameraId}`} className="absolute inset-0 w-full h-full object-contain hidden opacity-100 z-0" alt={cameraId} />
               {!latestData?.inference && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-30 z-10">
-                  <Activity size={isSplit ? 28 : 48} className="text-zinc-500 mb-2" />
-                  <span className={`font-mono text-zinc-500 ${isSplit ? 'text-xs' : 'text-base'}`}>{t.videoOffline}</span>
+                  <Activity size={isSplit ? 28 : 48} className="text-[#64748b] mb-2" />
+                  <span className={`font-mono text-[#64748b] ${isSplit ? 'text-xs' : 'text-base'}`}>{t.videoOffline}</span>
                 </div>
               )}
             </>
           )}
         </div>
-        <div className="absolute top-2 left-2 bg-[#18181b]/90 px-2 py-0.5 border border-[#3f3f46] font-mono text-zinc-300 z-10 text-[10px]">{cameraId}</div>
+        <div className="absolute top-2 left-2 bg-[#ffffff]/90 px-2 py-0.5 border border-[#d9e1ec] font-mono text-[#334155] z-10 text-[10px]">{cameraId}</div>
         {latestData?.inference && (
-          <div className="absolute top-2 right-2 bg-[#18181b]/90 px-2 py-0.5 border border-[#f59e0b] text-[#f59e0b] font-mono flex items-center gap-1.5 z-10 text-[10px] animate-pulse">
-            <div className="bg-[#f59e0b] rounded-full w-1.5 h-1.5" />
+          <div className="absolute top-2 right-2 bg-[#ffffff]/90 px-2 py-0.5 border border-[#d97706] text-[#d97706] font-mono flex items-center gap-1.5 z-10 text-[10px] animate-pulse">
+            <div className="bg-[#d97706] rounded-full w-1.5 h-1.5" />
             INFERENCE
           </div>
         )}
         {latestData?.inference && (
           <div className="absolute bottom-3 inset-x-0 w-full flex justify-center z-10 pointer-events-none">
-            <div className={`px-4 py-1 border text-sm font-black uppercase tracking-widest bg-[#18181b]/90 ${latestData.logic && (latestData.logic as Record<string, unknown>).allowed_transition === false ? 'text-[#ef4444] border-[#ef4444]' : 'text-[#22c55e] border-[#3f3f46]'}`}>
+            <div className={`px-4 py-1 border text-sm font-black uppercase tracking-widest bg-[#ffffff]/90 ${latestData.logic && (latestData.logic as Record<string, unknown>).allowed_transition === false ? 'text-[#dc2626] border-[#dc2626]' : 'text-[#16a34a] border-[#d9e1ec]'}`}>
               {(latestData.display as Record<string, string> | undefined)?.system_message || 'ANALYZING...'}
             </div>
           </div>
         )}
-        <div className="absolute bottom-1 right-2 text-[8px] text-zinc-800 font-mono z-10 pointer-events-none">더블클릭 • 상세보기</div>
+        <div className="absolute bottom-1 right-2 text-[8px] text-[#cbd5e1] font-mono z-10 pointer-events-none">더블클릭 • 상세보기</div>
       </div>
-      <div className={`bg-[#27272a] border-t border-[#3f3f46] flex ${isSplit ? 'p-0.5 gap-0.5' : 'p-1.5 gap-1.5'}`}>
+      <div className={`bg-[#f8fafc] border-t border-[#d9e1ec] flex ${isSplit ? 'p-0.5 gap-0.5' : 'p-1.5 gap-1.5'}`}>
         {steps.map((step, index) => {
           const status = stepStatuses[index] || 'idle';
-          let ss = 'border-[#52525b] bg-zinc-800/30 text-zinc-600 opacity-50';
-          let tc = 'text-zinc-600';
-          if (status === 'processing') { ss = 'border-[#f59e0b] bg-[#f59e0b]/15 animate-pulse'; tc = 'text-[#f59e0b]'; }
-          else if (status === 'success') { ss = 'border-[#22c55e] bg-[#22c55e]/15'; tc = 'text-[#22c55e]'; }
-          else if (status === 'error') { ss = 'border-[#ef4444] bg-[#ef4444]/15'; tc = 'text-[#ef4444]'; }
+          let ss = 'border-[#c5cfdd] bg-[#eef2f7]/30 text-[#94a3b8] opacity-50';
+          let tc = 'text-[#94a3b8]';
+          if (status === 'processing') { ss = 'border-[#d97706] bg-[#d97706]/15 animate-pulse'; tc = 'text-[#d97706]'; }
+          else if (status === 'success') { ss = 'border-[#16a34a] bg-[#16a34a]/15'; tc = 'text-[#16a34a]'; }
+          else if (status === 'error') { ss = 'border-[#dc2626] bg-[#dc2626]/15'; tc = 'text-[#dc2626]'; }
           return (
             <div key={step.id} className={`flex-1 border flex items-center justify-between px-1.5 py-1 relative transition-all ${ss}`}>
-              {(status === 'processing' || status === 'error') && <div className={`absolute top-0 left-0 w-full h-[2px] ${status === 'error' ? 'bg-[#ef4444]' : 'bg-[#f59e0b]'}`} />}
+              {(status === 'processing' || status === 'error') && <div className={`absolute top-0 left-0 w-full h-[2px] ${status === 'error' ? 'bg-[#dc2626]' : 'bg-[#d97706]'}`} />}
               <span className={`text-[9px] font-bold ${tc}`}>{step.title}</span>
               {status === 'success' ? <CheckCircle2 size={10} className={tc} /> : status === 'error' ? <XCircle size={10} className={tc} /> : status === 'processing' ? <step.icon size={10} className={tc} /> : null}
             </div>
@@ -289,20 +289,20 @@ function DetailModal({
 
   return (
     <div className="fixed inset-0 bg-black/70 z-[150] flex items-center justify-center p-3">
-      <div className="bg-[#18181b] border border-[#52525b] w-[94vw] h-[92vh] flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.8)]">
+      <div className="bg-[#ffffff] border border-[#c5cfdd] w-[94vw] h-[92vh] flex flex-col shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
 
         {/* 타이틀바 */}
-        <div className="flex items-center justify-between px-4 py-2.5 bg-[#27272a] border-b-2 border-[#E50012] shrink-0">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-[#f8fafc] border-b-2 border-[#CC0000] shrink-0">
           <div className="flex items-center gap-3">
-            {item.type === 'camera' ? <Camera size={18} className="text-[#E50012]" /> : <ImageIcon size={18} className="text-[#E50012]" />}
-            <span className="font-black text-zinc-100 tracking-widest text-base">
+            {item.type === 'camera' ? <Camera size={18} className="text-[#CC0000]" /> : <ImageIcon size={18} className="text-[#CC0000]" />}
+            <span className="font-black text-[#111827] tracking-widest text-base">
               {item.type === 'camera' ? `${item.id} — ${cam?.name}` : item.id}
             </span>
-            <span className="px-2 py-0.5 border border-[#f59e0b] text-[#f59e0b] font-mono text-xs">
+            <span className="px-2 py-0.5 border border-[#d97706] text-[#d97706] font-mono text-xs">
               {item.type === 'camera' ? 'LIVE STREAM' : `T${(imgLog as ImageLog)?.target_idx} · ${(imgLog as ImageLog)?.reason}`}
             </span>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white p-2 hover:bg-zinc-700 border border-transparent hover:border-zinc-500 flex items-center gap-1.5 text-xs font-bold tracking-widest transition-colors">
+          <button onClick={onClose} className="text-[#64748b] hover:text-[#111827] p-2 hover:bg-[#e2e8f0] border border-transparent hover:border-[#cbd5e1] flex items-center gap-1.5 text-xs font-bold tracking-widest transition-colors">
             <X size={16} /> 닫기
           </button>
         </div>
@@ -311,7 +311,7 @@ function DetailModal({
         <div className="flex-1 flex min-h-0">
 
           {/* 좌측: 대형 영상/이미지 */}
-          <div className="flex-[7] relative bg-black flex items-center justify-center border-r border-[#3f3f46]">
+          <div className="flex-[7] relative bg-black flex items-center justify-center border-r border-[#d9e1ec]">
             {item.type === 'camera' ? (
               <>
                 <img
@@ -320,7 +320,7 @@ function DetailModal({
                   alt={item.id}
                 />
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-20 pointer-events-none">
-                  <Activity size={80} className="text-zinc-500" />
+                  <Activity size={80} className="text-[#64748b]" />
                 </div>
               </>
             ) : (
@@ -328,20 +328,20 @@ function DetailModal({
                 <img src={(imgLog as ImageLog).image_url} alt={item.id} className="w-full h-full object-contain" />
               ) : (
                 <div className="flex flex-col items-center justify-center opacity-30">
-                  <ImageIcon size={80} className="text-zinc-500 mb-4" />
-                  <span className="font-mono text-zinc-500">NO IMAGE</span>
+                  <ImageIcon size={80} className="text-[#64748b] mb-4" />
+                  <span className="font-mono text-[#64748b]">NO IMAGE</span>
                 </div>
               )
             )}
-            <div className="absolute top-3 left-3 bg-[#18181b]/90 px-3 py-1 border border-[#3f3f46] font-mono text-zinc-300 text-xs z-10">{item.id}</div>
+            <div className="absolute top-3 left-3 bg-[#ffffff]/90 px-3 py-1 border border-[#d9e1ec] font-mono text-[#334155] text-xs z-10">{item.id}</div>
             {item.type === 'camera' && (rawData as CameraData)?.inference && (
-              <div className="absolute top-3 right-3 bg-[#18181b]/90 px-3 py-1 border border-[#f59e0b] text-[#f59e0b] font-mono flex items-center gap-2 z-10 text-xs animate-pulse">
-                <div className="bg-[#f59e0b] w-2 h-2" /> TARGET INFERENCE
+              <div className="absolute top-3 right-3 bg-[#ffffff]/90 px-3 py-1 border border-[#d97706] text-[#d97706] font-mono flex items-center gap-2 z-10 text-xs animate-pulse">
+                <div className="bg-[#d97706] w-2 h-2" /> TARGET INFERENCE
               </div>
             )}
             {(rawData as CameraData)?.display && ((rawData as CameraData).display as Record<string,string>)?.system_message && (
               <div className="absolute bottom-4 inset-x-0 flex justify-center z-10 pointer-events-none">
-                <div className={`px-8 py-2 border text-2xl font-black uppercase tracking-widest bg-[#18181b]/90 ${((rawData as CameraData).logic as Record<string,unknown>)?.allowed_transition === false ? 'text-[#ef4444] border-[#ef4444]' : 'text-[#22c55e] border-[#3f3f46]'}`}>
+                <div className={`px-8 py-2 border text-2xl font-black uppercase tracking-widest bg-[#ffffff]/90 ${((rawData as CameraData).logic as Record<string,unknown>)?.allowed_transition === false ? 'text-[#dc2626] border-[#dc2626]' : 'text-[#16a34a] border-[#d9e1ec]'}`}>
                   {((rawData as CameraData).display as Record<string,string>).system_message}
                 </div>
               </div>
@@ -349,14 +349,14 @@ function DetailModal({
           </div>
 
           {/* 우측: 탭 패널 */}
-          <div className="flex-[3] flex flex-col bg-[#18181b] min-w-0">
-            <div className="flex border-b border-[#3f3f46] shrink-0">
+          <div className="flex-[3] flex flex-col bg-[#ffffff] min-w-0">
+            <div className="flex border-b border-[#d9e1ec] shrink-0">
               {(['data', 'edit'] as const).map(tabKey => (
                 <button
                   key={tabKey}
                   onClick={() => setTab(tabKey)}
                   className={`flex-1 py-2.5 text-xs font-black tracking-widest uppercase border-b-2 transition-colors ${
-                    tab === tabKey ? 'border-[#E50012] text-zinc-100 bg-[#27272a]' : 'border-transparent text-zinc-500 hover:text-zinc-300'
+                    tab === tabKey ? 'border-[#CC0000] text-[#111827] bg-[#f8fafc]' : 'border-transparent text-[#64748b] hover:text-[#334155]'
                   }`}
                 >
                   {tabKey === 'data' ? '실시간 데이터' : '데이터 수정'}
@@ -368,19 +368,19 @@ function DetailModal({
               <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   {[
-                    { label: 'Confidence', value: `${(((rawData as CameraData)?.confidence ?? 0) * 100).toFixed(1)}%`, color: '#f59e0b' },
-                    { label: 'State', value: (rawData as CameraData)?.confirmed_state || (rawData as ImageLog)?.status || '-', color: '#22c55e' },
-                    { label: 'Label', value: (rawData as CameraData)?.predicted_label || '-', color: '#a1a1aa' },
-                    { label: 'Unknown', value: (rawData as CameraData)?.is_unknown ? 'TRUE' : 'FALSE', color: (rawData as CameraData)?.is_unknown ? '#f59e0b' : '#52525b' },
+                    { label: 'Confidence', value: `${(((rawData as CameraData)?.confidence ?? 0) * 100).toFixed(1)}%`, color: '#d97706' },
+                    { label: 'State', value: (rawData as CameraData)?.confirmed_state || (rawData as ImageLog)?.status || '-', color: '#16a34a' },
+                    { label: 'Label', value: (rawData as CameraData)?.predicted_label || '-', color: '#64748b' },
+                    { label: 'Unknown', value: (rawData as CameraData)?.is_unknown ? 'TRUE' : 'FALSE', color: (rawData as CameraData)?.is_unknown ? '#d97706' : '#c5cfdd' },
                   ].map(card => (
-                    <div key={card.label} className="bg-[#27272a] border border-[#3f3f46] p-3">
-                      <div className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1">{card.label}</div>
+                    <div key={card.label} className="bg-[#f8fafc] border border-[#d9e1ec] p-3">
+                      <div className="text-[9px] text-[#64748b] uppercase tracking-widest mb-1">{card.label}</div>
                       <div className="font-mono text-xs font-bold truncate" style={{ color: card.color }}>{card.value}</div>
                     </div>
                   ))}
                 </div>
-                <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-1">Raw JSON</div>
-                <pre className="text-[9px] font-mono text-zinc-400 bg-[#27272a] p-3 border border-[#3f3f46] overflow-auto max-h-[55vh] whitespace-pre-wrap break-all custom-scrollbar">
+                <div className="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest mb-1">Raw JSON</div>
+                <pre className="text-[9px] font-mono text-[#64748b] bg-[#f8fafc] p-3 border border-[#d9e1ec] overflow-auto max-h-[55vh] whitespace-pre-wrap break-all custom-scrollbar">
                   {JSON.stringify(rawData, null, 2)}
                 </pre>
               </div>
@@ -388,19 +388,19 @@ function DetailModal({
               <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                 {item.id === 'CAM_00' ? (
                   <div className="space-y-6">
-                    <div className="p-4 bg-[#020617] border border-[#1e293b] rounded-sm">
-                      <h3 className="text-[#38bdf8] font-black text-sm tracking-tighter uppercase mb-4 flex items-center gap-2">
+                    <div className="p-4 bg-[#f8fafc] border border-[#d9e1ec] rounded-sm">
+                      <h3 className="text-[#0284c7] font-black text-sm tracking-tighter uppercase mb-4 flex items-center gap-2">
                         <Globe size={16} className="animate-pulse" /> {t.devPortal}
                       </h3>
                       
                       <div className="space-y-4">
                         <div>
-                          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">{t.contentType}</label>
+                          <label className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest mb-2 block">{t.contentType}</label>
                           <div className="grid grid-cols-2 gap-2">
                             {['youtube', 'news'].map(type => (
                               <button key={type}
                                 onClick={() => setEditDisplay(p => ({ ...p, type }))}
-                                className={`py-2 text-[10px] font-black uppercase border transition-all ${editDisplay.type === type ? 'border-[#38bdf8] bg-[#38bdf8]/20 text-[#38bdf8]' : 'border-[#1e293b] bg-[#0f172a] text-zinc-600 hover:text-zinc-400'}`}>
+                                className={`py-2 text-[10px] font-black uppercase border transition-all ${editDisplay.type === type ? 'border-[#0284c7] bg-[#0284c7]/20 text-[#0284c7]' : 'border-[#d9e1ec] bg-[#ffffff] text-[#94a3b8] hover:text-[#64748b]'}`}>
                                 {type === 'youtube' ? t.youtubeFeed : t.newsFeed}
                               </button>
                             ))}
@@ -408,10 +408,10 @@ function DetailModal({
                         </div>
 
                         <div>
-                          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">{t.sourceUrl}</label>
+                          <label className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest mb-1 block">{t.sourceUrl}</label>
                           <input type="text" value={editDisplay.url || ''}
                             onChange={e => setEditDisplay(p => ({ ...p, url: e.target.value }))}
-                            className="w-full bg-[#0f172a] border border-[#1e293b] text-[#38bdf8] text-xs px-3 py-2 font-mono focus:outline-none focus:border-[#38bdf8]"
+                            className="w-full bg-[#ffffff] border border-[#d9e1ec] text-[#0284c7] text-xs px-3 py-2 font-mono focus:outline-none focus:border-[#0284c7]"
                             placeholder={editDisplay.type === 'youtube' ? "YouTube Embed URL..." : "News Source Name..."} />
                         </div>
                       </div>
@@ -421,12 +421,12 @@ function DetailModal({
                   <>
                     {/* 타겟 단계 */}
                     <div>
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">{t.analysisStep}</label>
+                      <label className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest mb-2 block">{t.analysisStep}</label>
                       <div className="grid grid-cols-4 gap-1">
                         {[1,2,3,4].map(n => (
                           <button key={n}
                             onClick={() => setEditLogic(p => ({ ...p, current_step_index: n }))}
-                            className={`py-3 font-black text-sm border transition-all ${editLogic.current_step_index === n ? 'border-[#E50012] bg-[#E50012] text-white' : 'border-[#3f3f46] bg-[#27272a] text-zinc-400 hover:border-zinc-400 hover:text-white'}`}>
+                            className={`py-3 font-black text-sm border transition-all ${editLogic.current_step_index === n ? 'border-[#CC0000] bg-[#CC0000] text-white' : 'border-[#d9e1ec] bg-[#f8fafc] text-[#64748b] hover:border-[#94a3b8] hover:text-[#111827]'}`}>
                             T{n}
                           </button>
                         ))}
@@ -435,43 +435,43 @@ function DetailModal({
                     {/* 신뢰도 */}
                     <div>
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t.confidence}</label>
-                        <span className="text-[#f59e0b] font-mono text-xs font-bold">{confidence.toFixed(2)}</span>
+                        <label className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest">{t.confidence}</label>
+                        <span className="text-[#d97706] font-mono text-xs font-bold">{confidence.toFixed(2)}</span>
                       </div>
                       <input type="range" min="0" max="1" step="0.01" value={confidence}
                         onChange={e => setEditLogic(p => ({ ...p, confidence: parseFloat(e.target.value) }))}
-                        className="w-full accent-[#f59e0b] cursor-pointer" />
+                        className="w-full accent-[#d97706] cursor-pointer" />
                     </div>
                     {/* 공정 전환 */}
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t.allowTransition}</label>
+                      <label className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest">{t.allowTransition}</label>
                       <button onClick={() => setEditLogic(p => ({ ...p, allowed_transition: !p.allowed_transition }))}
-                        className={`px-3 py-2 border font-bold text-xs transition-all ${editLogic.allowed_transition ? 'border-[#22c55e] bg-[#22c55e]/20 text-[#22c55e]' : 'border-[#ef4444] bg-[#ef4444]/20 text-[#ef4444]'}`}>
+                        className={`px-3 py-2 border font-bold text-xs transition-all ${editLogic.allowed_transition ? 'border-[#16a34a] bg-[#16a34a]/20 text-[#16a34a]' : 'border-[#dc2626] bg-[#dc2626]/20 text-[#dc2626]'}`}>
                         {editLogic.allowed_transition ? t.allowed : t.blocked}
                       </button>
                     </div>
                     {/* 미인식 */}
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t.unknownStatus}</label>
+                      <label className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest">{t.unknownStatus}</label>
                       <button onClick={() => setEditUnknown(v => !v)}
-                        className={`px-3 py-2 border font-bold text-xs transition-all ${editUnknown ? 'border-[#f59e0b] bg-[#f59e0b]/20 text-[#f59e0b]' : 'border-[#3f3f46] bg-[#27272a] text-zinc-400 hover:border-zinc-400'}`}>
+                        className={`px-3 py-2 border font-bold text-xs transition-all ${editUnknown ? 'border-[#d97706] bg-[#d97706]/20 text-[#d97706]' : 'border-[#d9e1ec] bg-[#f8fafc] text-[#64748b] hover:border-[#94a3b8]'}`}>
                         {editUnknown ? 'TRUE' : 'FALSE'}
                       </button>
                     </div>
                     {/* 시스템 메시지 */}
                     <div>
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">{t.systemMessage}</label>
+                      <label className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest mb-1 block">{t.systemMessage}</label>
                       <input type="text" value={editDisplay.system_message || ''}
                         onChange={e => setEditDisplay(p => ({ ...p, system_message: e.target.value }))}
-                        className="w-full bg-[#27272a] border border-[#3f3f46] text-zinc-100 text-sm px-3 py-2 font-mono focus:outline-none focus:border-zinc-400"
+                        className="w-full bg-[#f8fafc] border border-[#d9e1ec] text-[#111827] text-sm px-3 py-2 font-mono focus:outline-none focus:border-[#94a3b8]"
                         placeholder="ANALYZING..." />
                     </div>
                     {/* 예측 레이블 */}
                     <div>
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">{t.predictedLabel}</label>
+                      <label className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest mb-1 block">{t.predictedLabel}</label>
                       <input type="text" value={editLabel}
                         onChange={e => setEditLabel(e.target.value)}
-                        className="w-full bg-[#27272a] border border-[#3f3f46] text-zinc-100 text-sm px-3 py-2 font-mono focus:outline-none focus:border-zinc-400" />
+                        className="w-full bg-[#f8fafc] border border-[#d9e1ec] text-[#111827] text-sm px-3 py-2 font-mono focus:outline-none focus:border-[#94a3b8]" />
                     </div>
                   </>
                 )}
@@ -479,34 +479,34 @@ function DetailModal({
                   <button
                     onClick={handleSaveOverride}
                     disabled={loading || item.type !== 'camera' || !isAuthorized}
-                    className={`w-full flex items-center justify-center gap-2 py-3 font-black tracking-widest text-xs transition-all shadow-lg ${isAuthorized ? 'bg-[#E50012] hover:bg-[#ff3040] text-white' : 'bg-zinc-800 text-zinc-600 border border-zinc-700 cursor-not-allowed'}`}
+                    className={`w-full flex items-center justify-center gap-2 py-3 font-black tracking-widest text-xs transition-all shadow-lg ${isAuthorized ? 'bg-[#CC0000] hover:bg-[#E21A1A] text-white' : 'bg-[#eef2f7] text-[#94a3b8] border border-[#c5cfdd] cursor-not-allowed'}`}
                   >
                     <Save size={14} className={loading ? "animate-spin" : ""} />
                     {!isAuthorized ? t.authRequired : (loading ? "SAVING..." : t.saveOverride)}
                   </button>
                 </div>
-                {isAuthorized && <div className="text-[12px] text-[#22c55e] font-mono italic"> 주의: 저장 시 서버 설정이 즉시 변경됩니다.</div>}
-                {!isAuthorized && <div className="text-[9px] text-zinc-600 font-mono italic">※ 데이터 수정을 위해 관리자/개발자 모드(로고 3회 클릭) 로그인이 필요합니다.</div>}
+                {isAuthorized && <div className="text-[12px] text-[#16a34a] font-mono italic"> 주의: 저장 시 서버 설정이 즉시 변경됩니다.</div>}
+                {!isAuthorized && <div className="text-[9px] text-[#94a3b8] font-mono italic">※ 데이터 수정을 위해 관리자/개발자 모드(로고 3회 클릭) 로그인이 필요합니다.</div>}
               </div>
             )}
 
-            <div className="p-3 border-t border-[#3f3f46] shrink-0">
-              <button onClick={onClose} className="w-full py-3 border border-[#52525b] text-zinc-400 hover:text-white text-sm font-bold transition-colors">닫기</button>
+            <div className="p-3 border-t border-[#d9e1ec] shrink-0">
+              <button onClick={onClose} className="w-full py-3 border border-[#c5cfdd] text-[#64748b] hover:text-[#111827] text-sm font-bold transition-colors">닫기</button>
             </div>
           </div>
         </div>
 
         {/* 하단 Step 상태바 */}
-        <div className="flex border-t border-[#3f3f46] shrink-0">
+        <div className="flex border-t border-[#d9e1ec] shrink-0">
           {[1,2,3,4].map((n, i) => {
             const status = stepStatuses[i] || 'idle';
-            let ss = 'bg-[#27272a] text-zinc-600';
-            let tc = 'text-zinc-600';
-            if (status === 'processing') { ss = 'bg-[#f59e0b]/10 border-t-2 border-[#f59e0b]'; tc = 'text-[#f59e0b]'; }
-            else if (status === 'success') { ss = 'bg-[#22c55e]/10 border-t-2 border-[#22c55e]'; tc = 'text-[#22c55e]'; }
-            else if (status === 'error') { ss = 'bg-[#ef4444]/10 border-t-2 border-[#ef4444]'; tc = 'text-[#ef4444]'; }
+            let ss = 'bg-[#f8fafc] text-[#94a3b8]';
+            let tc = 'text-[#94a3b8]';
+            if (status === 'processing') { ss = 'bg-[#d97706]/10 border-t-2 border-[#d97706]'; tc = 'text-[#d97706]'; }
+            else if (status === 'success') { ss = 'bg-[#16a34a]/10 border-t-2 border-[#16a34a]'; tc = 'text-[#16a34a]'; }
+            else if (status === 'error') { ss = 'bg-[#dc2626]/10 border-t-2 border-[#dc2626]'; tc = 'text-[#dc2626]'; }
             return (
-              <div key={n} className={`flex-1 flex items-center justify-between px-4 py-3 border-r border-[#3f3f46] last:border-r-0 ${ss}`}>
+              <div key={n} className={`flex-1 flex items-center justify-between px-4 py-3 border-r border-[#d9e1ec] last:border-r-0 ${ss}`}>
                 <span className={`text-sm font-black tracking-wider ${tc}`}>{t.target} {n}</span>
                 <div className="flex items-center gap-2">
                   {status === 'success' && <CheckCircle2 size={18} className={tc} />}
@@ -689,15 +689,15 @@ function TestModeModal() {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-4">
-      <div className="bg-[#18181b] border-2 border-[#f59e0b] w-[95vw] h-[90vh] shadow-[0_0_50px_rgba(245,158,11,0.15)] flex flex-col">
-        <div className="flex items-center justify-between p-5 border-b border-[#3f3f46] bg-[#27272a]">
+      <div className="bg-[#ffffff] border-2 border-[#d97706] w-[95vw] h-[90vh] shadow-[0_0_50px_rgba(245,158,11,0.15)] flex flex-col">
+        <div className="flex items-center justify-between p-5 border-b border-[#d9e1ec] bg-[#f8fafc]">
           <div className="flex items-center gap-4">
-            <div className="bg-[#f59e0b]/10 p-2 rounded-sm border border-[#f59e0b]/30">
-              <Database size={28} className="text-[#f59e0b]" />
+            <div className="bg-[#d97706]/10 p-2 rounded-sm border border-[#d97706]/30">
+              <Database size={28} className="text-[#d97706]" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-zinc-100 tracking-tighter uppercase leading-none">{t.testMode}</h2>
-              <p className="text-[10px] text-zinc-500 font-mono mt-1 uppercase tracking-widest">Total Cached: {dbLogs.length} Rows</p>
+              <h2 className="text-2xl font-black text-[#111827] tracking-tighter uppercase leading-none">{t.testMode}</h2>
+              <p className="text-[10px] text-[#64748b] font-mono mt-1 uppercase tracking-widest">Total Cached: {dbLogs.length} Rows</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -705,7 +705,7 @@ function TestModeModal() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={loading}
-              className="flex items-center gap-2 px-6 py-3 bg-[#E50012] hover:bg-[#ff3040] text-white text-xs font-black transition-all disabled:opacity-50 shadow-lg border border-[#E50012] active:scale-95"
+              className="flex items-center gap-2 px-6 py-3 bg-[#CC0000] hover:bg-[#E21A1A] text-white text-xs font-black transition-all disabled:opacity-50 shadow-lg border border-[#CC0000] active:scale-95"
             >
               <ImageIcon size={16} />
               {t.localTest}
@@ -713,24 +713,24 @@ function TestModeModal() {
             <button
               onClick={() => fetchLogs(true)}
               disabled={loading}
-              className="flex items-center gap-2 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-zinc-300 text-xs font-black transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-3 bg-[#eef2f7] hover:bg-[#e2e8f0] border border-[#c5cfdd] text-[#334155] text-xs font-black transition-all disabled:opacity-50"
             >
               <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
               {t.refresh}
             </button>
             <button
               onClick={() => setTestModeOpen(false)}
-              className="text-zinc-500 hover:text-white p-2 hover:bg-zinc-800 transition-colors"
+              className="text-[#64748b] hover:text-[#111827] p-2 hover:bg-[#eef2f7] transition-colors"
             >
               <X size={32} />
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto p-2 custom-scrollbar bg-black/60" ref={scrollRef}>
+        <div className="flex-1 overflow-auto p-2 custom-scrollbar bg-[#f5f7fb]" ref={scrollRef}>
           <table className="w-full text-left border-collapse min-w-[1200px]">
-            <thead className="sticky top-0 bg-[#27272a] shadow-xl z-20">
-              <tr className="text-[#f59e0b] text-xs font-black uppercase tracking-widest border-b border-[#3f3f46]">
+            <thead className="sticky top-0 bg-[#f8fafc] shadow-xl z-20">
+              <tr className="text-[#d97706] text-xs font-black uppercase tracking-widest border-b border-[#d9e1ec]">
                 <th className="p-4 pl-6">ID</th>
                 <th className="p-4">Timestamp</th>
                 <th className="p-4">Source</th>
@@ -742,31 +742,31 @@ function TestModeModal() {
                 <th className="p-4 pr-6 text-center">{t.action}</th>
               </tr>
             </thead>
-            <tbody className="text-sm font-mono text-zinc-400 divide-y divide-zinc-800/50">
+            <tbody className="text-sm font-mono text-[#64748b] divide-y divide-[#e2e8f0]">
               {dbLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-white/5 transition-colors group">
-                  <td className="p-5 pl-6 text-zinc-600 font-bold group-hover:text-zinc-400 transition-colors">#{log.id}</td>
+                <tr key={log.id} className="hover:bg-[#111827]/5 transition-colors group">
+                  <td className="p-5 pl-6 text-[#94a3b8] font-bold group-hover:text-[#64748b] transition-colors">#{log.id}</td>
                   <td className="p-5 whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
-                  <td className="p-5 text-blue-400/80 font-black uppercase text-[10px]">{log.source_type}</td>
+                  <td className="p-5 text-[#2563eb] font-black uppercase text-[10px]">{log.source_type}</td>
                   <td className="p-5">
                     <span className={`px-3 py-1.5 rounded-sm text-[11px] font-black tracking-tighter ${log.confirmed_state === 'ERROR_SEQUENCE' ? 'bg-red-500/10 text-red-500 border border-red-500/30' : 'bg-green-500/10 text-green-500 border border-green-500/30'}`}>
                       {log.confirmed_state}
                     </span>
                   </td>
-                  <td className="p-5 text-zinc-200 font-black">{log.predicted_label}</td>
-                  <td className="p-5 text-[#f59e0b] font-black text-base italic">{(log.confidence * 100).toFixed(1)}%</td>
+                  <td className="p-5 text-[#1f2937] font-black">{log.predicted_label}</td>
+                  <td className="p-5 text-[#d97706] font-black text-base italic">{(log.confidence * 100).toFixed(1)}%</td>
                   <td className="p-5">
                     {log.anomaly_flag ? 
                       <div className="flex items-center gap-2 text-red-500"><ShieldAlert size={14} className="animate-pulse" /><span className="font-black text-[10px] tracking-widest">ALARM</span></div> 
-                      : <span className="text-zinc-800 font-black text-[10px]">NORMAL</span>
+                      : <span className="text-[#cbd5e1] font-black text-[10px]">NORMAL</span>
                     }
                   </td>
-                  <td className="p-5 text-[10px] text-zinc-500 truncate max-w-[300px] hover:text-[#38bdf8] cursor-help transition-colors">{log.file_path}</td>
+                  <td className="p-5 text-[10px] text-[#64748b] truncate max-w-[300px] hover:text-[#0284c7] cursor-help transition-colors">{log.file_path}</td>
                   <td className="p-5 pr-6 text-center">
                     <button 
                       onClick={() => handleReinspect(log.id)}
                       disabled={loading}
-                      className="px-5 py-3 font-normal bg-zinc-800 hover:bg-[#E50012] text-white text-[11px] font-black tracking-widest transition-all shadow-md active:scale-90 border border-zinc-700"
+                      className="px-5 py-3 bg-[#eef2f7] hover:bg-[#CC0000] text-[#334155] hover:text-white text-[11px] font-black tracking-widest transition-all shadow-md active:scale-90 border border-[#c5cfdd]"
                     >
                       {t.reinspect}
                     </button>
@@ -783,11 +783,11 @@ function TestModeModal() {
           )}
         </div>
 
-        <div className="p-3 bg-[#27272a] border-t border-[#3f3f46] flex justify-between items-center">
-          <span className="text-[10px] font-mono text-zinc-500 tracking-widest">CONNECTED TO DB: factory_test.db</span>
+        <div className="p-3 bg-[#f8fafc] border-t border-[#d9e1ec] flex justify-between items-center">
+          <span className="text-[10px] font-mono text-[#64748b] tracking-widest">CONNECTED TO DB: factory_test.db</span>
           <button
             onClick={() => setTestModeOpen(false)}
-            className="px-8 py-2 bg-[#f59e0b] hover:bg-[#ffb020] text-black font-black text-sm transition-all"
+            className="px-8 py-2 bg-[#d97706] hover:bg-[#f59e0b] text-black font-black text-sm transition-all"
           >
             닫기
           </button>
@@ -804,37 +804,37 @@ function SettingsModal() {
   if (!isSettingsOpen) return null;
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-      <div className="bg-[#18181b] border border-[#3f3f46] w-full max-w-md shadow-2xl flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-[#27272a] bg-[#27272a]">
+      <div className="bg-[#ffffff] border border-[#d9e1ec] w-full max-w-md shadow-2xl flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-[#f8fafc] bg-[#f8fafc]">
           <div className="flex items-center gap-3">
-            <Settings size={20} className="text-zinc-300" />
-            <h2 className="text-lg font-bold text-zinc-100">{t.settingsTitle}</h2>
+            <Settings size={20} className="text-[#334155]" />
+            <h2 className="text-lg font-bold text-[#111827]">{t.settingsTitle}</h2>
           </div>
-          <button onClick={() => setSettingsOpen(false)} className="text-zinc-400 hover:text-white p-1 hover:bg-zinc-600 transition-colors"><X size={20} /></button>
+          <button onClick={() => setSettingsOpen(false)} className="text-[#64748b] hover:text-[#111827] p-1 hover:bg-[#cbd5e1] transition-colors"><X size={20} /></button>
         </div>
         <div className="p-6 space-y-6">
           <div className="space-y-3">
-            <label className="flex items-center gap-2 text-sm font-semibold text-zinc-300 uppercase tracking-widest"><Globe size={16} />{t.languageSelect}</label>
+            <label className="flex items-center gap-2 text-sm font-semibold text-[#334155] uppercase tracking-widest"><Globe size={16} />{t.languageSelect}</label>
             <div className="grid grid-cols-2 gap-3 mt-2">
               {(['ko', 'en'] as const).map((lang) => (
-                <button key={lang} onClick={() => setLanguage(lang)} className={`p-3 border font-bold transition-all flex items-center justify-center ${language === lang ? 'border-[#E50012] bg-[#E50012]/10 text-white' : 'border-[#52525b] bg-[#27272a] text-zinc-300 hover:border-zinc-400 hover:text-white hover:bg-[#3f3f46]'}`}>
+                <button key={lang} onClick={() => setLanguage(lang)} className={`p-3 border font-bold transition-all flex items-center justify-center ${language === lang ? 'border-[#CC0000] bg-[#CC0000]/10 text-[#CC0000]' : 'border-[#c5cfdd] bg-[#f8fafc] text-[#334155] hover:border-[#94a3b8] hover:text-[#111827] hover:bg-[#d9e1ec]'}`}>
                   {lang === 'ko' ? '한국어' : 'English'}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="pt-4 border-t border-zinc-800">
+          <div className="pt-4 border-t border-[#e2e8f0]">
             <button
               onClick={() => { setSettingsOpen(false); setTestModeOpen(true); }}
-              className="w-full flex items-center justify-center gap-3 p-4 bg-zinc-800 hover:bg-[#f59e0b] hover:text-black text-zinc-300 font-black tracking-widest transition-all group"
+              className="w-full flex items-center justify-center gap-3 p-4 bg-[#eef2f7] hover:bg-[#d97706] hover:text-white text-[#334155] font-black tracking-widest transition-all group"
             >
               테스트 모드(Test  Mode)
             </button>
           </div>
         </div>
-        <div className="p-4 border-t border-[#27272a] bg-[#18181b] flex justify-end">
-          <button onClick={() => setSettingsOpen(false)} className="px-6 py-2 bg-[#3f3f46] hover:bg-white hover:text-black border border-[#52525b] text-white font-bold transition-colors">{t.close}</button>
+        <div className="p-4 border-t border-[#f8fafc] bg-[#ffffff] flex justify-end">
+          <button onClick={() => setSettingsOpen(false)} className="px-6 py-2 bg-[#d9e1ec] hover:bg-[#111827] hover:text-white border border-[#c5cfdd] text-[#334155] font-bold transition-colors">{t.close}</button>
         </div>
       </div>
     </div>
@@ -894,21 +894,21 @@ function AdminModal() {
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4 animate-in fade-in duration-300">
       <form 
         onSubmit={handleLogin} 
-        className="bg-[#27272a] border border-[#E50012] w-full max-w-sm shadow-2xl flex flex-col p-8 relative overflow-hidden group"
+        className="bg-[#f8fafc] border border-[#CC0000] w-full max-w-sm shadow-2xl flex flex-col p-8 relative overflow-hidden group"
       >
         <div className="flex flex-col items-center mb-10 relative z-10">
-          <div className="w-16 h-16 bg-[#18181b] border border-[#3f3f46] flex items-center justify-center rounded-2xl mb-4 shadow-sm">
-            <Lock size={32} className={`${error ? 'text-[#ef4444]' : 'text-zinc-400'} transition-colors duration-500`} />
+          <div className="w-16 h-16 bg-[#ffffff] border border-[#d9e1ec] flex items-center justify-center rounded-2xl mb-4 shadow-sm">
+            <Lock size={32} className={`${error ? 'text-[#dc2626]' : 'text-[#64748b]'} transition-colors duration-500`} />
           </div>
-          <h2 className="text-xl font-black text-zinc-100 tracking-[0.2em] uppercase">{t.systemAuth}</h2>
-          <div className="h-0.5 w-12 bg-[#E50012] mt-3" />
+          <h2 className="text-xl font-black text-[#111827] tracking-[0.2em] uppercase">{t.systemAuth}</h2>
+          <div className="h-0.5 w-12 bg-[#CC0000] mt-3" />
         </div>
         
         <div className="space-y-8 relative z-10">
           <div className="space-y-4">
             <div className="flex justify-between items-center px-1">
-              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t.accessCode}</label>
-              {error && <span className="text-[#ef4444] text-[9px] font-bold animate-pulse">{t.invalidCode}</span>}
+              <label className="text-[10px] font-black text-[#64748b] uppercase tracking-widest">{t.accessCode}</label>
+              {error && <span className="text-[#dc2626] text-[9px] font-bold animate-pulse">{t.invalidCode}</span>}
             </div>
             
             <div className="relative group flex justify-center">
@@ -918,7 +918,7 @@ function AdminModal() {
                 maxLength={4}
                 value={pw}
                 onChange={(e) => { setPw(e.target.value); setError(false); }}
-                className={`w-full max-w-[310px] bg-[#18181b] border-b-2 ${error ? 'border-[#ef4444]' : 'border-[#3f3f46]'} focus:border-[#E50012] transition-all text-white text-center text-2xl tracking-[0.5em] py-2 outline-none font-mono shadow-inner`}
+                className={`w-full max-w-[310px] bg-[#ffffff] border-b-2 ${error ? 'border-[#dc2626]' : 'border-[#d9e1ec]'} focus:border-[#CC0000] transition-all text-[#111827] text-center text-2xl tracking-[0.5em] py-2 outline-none font-mono shadow-inner`}
               />
             </div>
           </div>
@@ -926,7 +926,7 @@ function AdminModal() {
           <div className="space-y-3">
             <button 
               type="submit"
-              className="w-full py-4 bg-[#E50012] hover:bg-[#ff3040] text-white font-black tracking-[0.2em] uppercase transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 group/btn"
+              className="w-full py-4 bg-[#CC0000] hover:bg-[#E21A1A] text-white font-black tracking-[0.2em] uppercase transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 group/btn"
             >
               <span>{t.login}</span>
               <ChevronRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
@@ -935,7 +935,7 @@ function AdminModal() {
             <button 
               type="button"
               onClick={() => { setAdminOpen(false); setPw(""); setError(false); }}
-              className="w-full py-2 text-zinc-500 hover:text-zinc-300 text-[10px] font-bold tracking-[0.2em] uppercase transition-all"
+              className="w-full py-2 text-[#64748b] hover:text-[#334155] text-[10px] font-bold tracking-[0.2em] uppercase transition-all"
             >
               {t.cancel}
             </button>
@@ -1102,22 +1102,22 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#18181b] z-[500] grid grid-cols-1 lg:grid-cols-[minmax(280px,420px)_1fr] gap-4 p-4 overflow-y-auto">
-      <div className="bg-[#27272a] border border-[#3f3f46] flex flex-col min-h-0">
-        <div className="px-4 py-3 border-b border-[#3f3f46] flex items-center justify-between">
+    <div className="fixed inset-0 bg-[#ffffff] z-[500] grid grid-cols-1 lg:grid-cols-[minmax(280px,420px)_1fr] gap-4 p-4 overflow-y-auto">
+      <div className="bg-[#f8fafc] border border-[#d9e1ec] flex flex-col min-h-0">
+        <div className="px-4 py-3 border-b border-[#d9e1ec] flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-black text-[#E50012] tracking-tighter uppercase italic">Realtime Source</h2>
-            <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">{connectionState.toUpperCase()}</div>
+            <h2 className="text-xl font-black text-[#CC0000] tracking-tighter uppercase italic">Realtime Source</h2>
+            <div className="text-[10px] text-[#64748b] font-mono uppercase tracking-widest">{connectionState.toUpperCase()}</div>
           </div>
-          <button onClick={onExit} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-transparent hover:border-zinc-600">
+          <button onClick={onExit} className="p-2 text-[#64748b] hover:text-[#111827] hover:bg-[#eef2f7] border border-transparent hover:border-[#c5cfdd]">
             <X size={20} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
           <label className="block space-y-1">
-            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Camera ID</span>
-            <input value={cameraId} disabled={streaming} onChange={(e) => setCameraId(e.target.value || 'CAM_WS')} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
+            <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">Camera ID</span>
+            <input value={cameraId} disabled={streaming} onChange={(e) => setCameraId(e.target.value || 'CAM_WS')} className="w-full bg-[#ffffff] border border-[#d9e1ec] px-3 py-2 text-sm font-mono text-[#111827] outline-none focus:border-[#CC0000]" />
           </label>
 
           <div className="grid grid-cols-2 gap-2">
@@ -1126,7 +1126,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
                 key={mode}
                 disabled={streaming}
                 onClick={() => setModelMode(mode)}
-                className={`py-3 border text-xs font-black uppercase tracking-widest ${modelMode === mode ? 'bg-[#E50012] border-[#E50012] text-white' : 'bg-[#18181b] border-[#3f3f46] text-zinc-400 hover:text-white'}`}
+                className={`py-3 border text-xs font-black uppercase tracking-widest ${modelMode === mode ? 'bg-[#CC0000] border-[#CC0000] text-white' : 'bg-[#ffffff] border-[#d9e1ec] text-[#64748b] hover:text-[#111827]'}`}
               >
                 {mode}
               </button>
@@ -1134,8 +1134,8 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
           </div>
 
           <label className="block space-y-1">
-            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Scenario</span>
-            <select disabled={streaming} value={scenario} onChange={(e) => setScenario(e.target.value)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]">
+            <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">Scenario</span>
+            <select disabled={streaming} value={scenario} onChange={(e) => setScenario(e.target.value)} className="w-full bg-[#ffffff] border border-[#d9e1ec] px-3 py-2 text-sm font-mono text-[#111827] outline-none focus:border-[#CC0000]">
               <option value="normal_target2_accept">normal_target2_accept</option>
               <option value="single_pass_accept">single_pass_accept</option>
               <option value="unknown_no_pass">unknown_no_pass</option>
@@ -1146,55 +1146,55 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
           </label>
 
           <label className="block space-y-1">
-            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Target Order</span>
-            <input disabled={streaming} value={targetOrder} onChange={(e) => setTargetOrder(e.target.value)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
+            <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">Target Order</span>
+            <input disabled={streaming} value={targetOrder} onChange={(e) => setTargetOrder(e.target.value)} className="w-full bg-[#ffffff] border border-[#d9e1ec] px-3 py-2 text-sm font-mono text-[#111827] outline-none focus:border-[#CC0000]" />
           </label>
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Sample ms</span>
-              <input type="number" min={50} max={2000} step={50} disabled={streaming} value={sampleMs} onChange={(e) => setSampleMs(Number(e.target.value) || 100)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
+              <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">Sample ms</span>
+              <input type="number" min={50} max={2000} step={50} disabled={streaming} value={sampleMs} onChange={(e) => setSampleMs(Number(e.target.value) || 100)} className="w-full bg-[#ffffff] border border-[#d9e1ec] px-3 py-2 text-sm font-mono text-[#111827] outline-none focus:border-[#CC0000]" />
             </label>
             <label className="block space-y-1">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Width</span>
-              <input type="number" min={224} max={1920} step={64} disabled={streaming} value={frameWidth} onChange={(e) => setFrameWidth(Number(e.target.value) || 1280)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
+              <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">Width</span>
+              <input type="number" min={224} max={1920} step={64} disabled={streaming} value={frameWidth} onChange={(e) => setFrameWidth(Number(e.target.value) || 1280)} className="w-full bg-[#ffffff] border border-[#d9e1ec] px-3 py-2 text-sm font-mono text-[#111827] outline-none focus:border-[#CC0000]" />
             </label>
           </div>
 
           <label className="block space-y-2">
-            <div className="flex justify-between text-[10px] text-zinc-500 font-black uppercase tracking-widest">
+            <div className="flex justify-between text-[10px] text-[#64748b] font-black uppercase tracking-widest">
               <span>JPEG Quality</span>
               <span>{Math.round(jpegQuality * 100)}%</span>
             </div>
-            <input type="range" min={0.5} max={0.95} step={0.05} disabled={streaming} value={jpegQuality} onChange={(e) => setJpegQuality(Number(e.target.value))} className="w-full accent-[#E50012]" />
+            <input type="range" min={0.5} max={0.95} step={0.05} disabled={streaming} value={jpegQuality} onChange={(e) => setJpegQuality(Number(e.target.value))} className="w-full accent-[#CC0000]" />
           </label>
 
-          <label className="flex items-center justify-between bg-[#18181b] border border-[#3f3f46] px-3 py-3">
-            <span className="text-xs text-zinc-300 font-black uppercase tracking-widest">Save Artifacts</span>
-            <input type="checkbox" checked={saveArtifacts} disabled={streaming} onChange={(e) => setSaveArtifacts(e.target.checked)} className="h-4 w-4 accent-[#E50012]" />
+          <label className="flex items-center justify-between bg-[#ffffff] border border-[#d9e1ec] px-3 py-3">
+            <span className="text-xs text-[#334155] font-black uppercase tracking-widest">Save Artifacts</span>
+            <input type="checkbox" checked={saveArtifacts} disabled={streaming} onChange={(e) => setSaveArtifacts(e.target.checked)} className="h-4 w-4 accent-[#CC0000]" />
           </label>
         </div>
 
-        <div className="p-4 border-t border-[#3f3f46] space-y-3">
+        <div className="p-4 border-t border-[#d9e1ec] space-y-3">
           <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-            <div className="bg-[#18181b] border border-[#3f3f46] p-2 text-zinc-400">SENT <span className="float-right text-zinc-100">{stats.sent}</span></div>
-            <div className="bg-[#18181b] border border-[#3f3f46] p-2 text-zinc-400">RESULT <span className="float-right text-zinc-100">{stats.received}</span></div>
-            <div className="bg-[#18181b] border border-[#3f3f46] p-2 text-zinc-400">PRED <span className="float-right text-zinc-100">{stats.predicted}</span></div>
-            <div className="bg-[#18181b] border border-[#3f3f46] p-2 text-zinc-400">FINAL <span className="float-right text-zinc-100">{stats.finalLabel}</span></div>
+            <div className="bg-[#ffffff] border border-[#d9e1ec] p-2 text-[#64748b]">SENT <span className="float-right text-[#111827]">{stats.sent}</span></div>
+            <div className="bg-[#ffffff] border border-[#d9e1ec] p-2 text-[#64748b]">RESULT <span className="float-right text-[#111827]">{stats.received}</span></div>
+            <div className="bg-[#ffffff] border border-[#d9e1ec] p-2 text-[#64748b]">PRED <span className="float-right text-[#111827]">{stats.predicted}</span></div>
+            <div className="bg-[#ffffff] border border-[#d9e1ec] p-2 text-[#64748b]">FINAL <span className="float-right text-[#111827]">{stats.finalLabel}</span></div>
           </div>
-          <div className={`border px-3 py-2 text-center text-xs font-black uppercase tracking-widest ${connectionState === 'error' ? 'border-[#ef4444] text-[#ef4444]' : streaming ? 'border-[#22c55e] text-[#22c55e]' : 'border-[#3f3f46] text-zinc-500'}`}>
+          <div className={`border px-3 py-2 text-center text-xs font-black uppercase tracking-widest ${connectionState === 'error' ? 'border-[#dc2626] text-[#dc2626]' : streaming ? 'border-[#16a34a] text-[#16a34a]' : 'border-[#d9e1ec] text-[#64748b]'}`}>
             {stats.message}
           </div>
           <button
             onClick={toggleStreaming}
-            className={`w-full py-4 text-base font-black tracking-widest uppercase transition-all shadow-xl active:scale-95 ${streaming ? 'bg-zinc-800 text-red-500 border border-red-500/30' : 'bg-[#E50012] text-white hover:bg-white hover:text-black'}`}
+            className={`w-full py-4 text-base font-black tracking-widest uppercase transition-all shadow-xl active:scale-95 ${streaming ? 'bg-[#eef2f7] text-red-500 border border-red-500/30' : 'bg-[#CC0000] text-white hover:bg-[#111827] hover:text-white'}`}
           >
             {streaming ? 'STOP STREAM' : 'START STREAM'}
           </button>
         </div>
       </div>
 
-      <div className="relative bg-black border border-[#3f3f46] overflow-hidden min-h-0 flex items-center justify-center">
+      <div className="relative bg-black border border-[#d9e1ec] overflow-hidden min-h-0 flex items-center justify-center">
         <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-contain" />
         <canvas ref={canvasRef} className="hidden" />
 
@@ -1204,7 +1204,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
           </div>
         )}
 
-        <div className="absolute left-4 bottom-4 bg-[#18181b]/90 border border-[#3f3f46] px-3 py-2 font-mono text-[10px] text-zinc-400">
+        <div className="absolute left-4 bottom-4 bg-[#ffffff]/90 border border-[#d9e1ec] px-3 py-2 font-mono text-[10px] text-[#64748b]">
           <div>{buildSourceWsUrl(cameraId, modelMode, scenario)}</div>
           <div>{frameWidth}px / {sampleMs}ms / {modelMode}</div>
         </div>
@@ -1364,22 +1364,22 @@ function VideoAnalysisModal() {
 
   return (
     <div className="fixed inset-0 bg-black/85 z-[160] flex items-center justify-center p-3">
-      <div className="bg-[#18181b] border-2 border-[#3b82f6] w-[96vw] h-[94vh] flex flex-col shadow-[0_0_50px_rgba(59,130,246,0.2)]">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#3f3f46] bg-[#27272a]">
+      <div className="bg-[#ffffff] border-2 border-[#2563eb] w-[96vw] h-[94vh] flex flex-col shadow-[0_0_50px_rgba(59,130,246,0.2)]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#d9e1ec] bg-[#f8fafc]">
           <div className="flex items-center gap-3">
-            <div className="bg-[#3b82f6]/10 p-2 border border-[#3b82f6]/30">
-              <Video size={20} className="text-[#3b82f6]" />
+            <div className="bg-[#2563eb]/10 p-2 border border-[#2563eb]/30">
+              <Video size={20} className="text-[#2563eb]" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-zinc-100 tracking-tighter uppercase leading-none">VIDEO ANALYSIS</h2>
-              <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest mt-1 truncate max-w-[60vw]">{filename}</p>
+              <h2 className="text-lg font-black text-[#111827] tracking-tighter uppercase leading-none">VIDEO ANALYSIS</h2>
+              <p className="text-[10px] text-[#64748b] font-mono uppercase tracking-widest mt-1 truncate max-w-[60vw]">{filename}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-xs font-mono text-zinc-300">{statusLabel}</div>
+            <div className="text-xs font-mono text-[#334155]">{statusLabel}</div>
             <button
               onClick={clearVideoAnalysis}
-              className="p-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-zinc-300 hover:text-white"
+              className="p-2 bg-[#eef2f7] hover:bg-[#e2e8f0] border border-[#c5cfdd] text-[#334155] hover:text-[#111827]"
             >
               <X size={18} />
             </button>
@@ -1398,36 +1398,36 @@ function VideoAnalysisModal() {
               className="max-w-full max-h-full"
             />
             <canvas ref={canvasRef} className="hidden" />
-            <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-400">
+            <div className="flex items-center gap-2 text-[10px] font-mono text-[#64748b]">
               <span>SPEED</span>
               {[1, 2, 4, 8].map((r) => (
                 <button
                   key={r}
                   onClick={() => handlePlaybackRate(r)}
-                  className={`px-2 py-1 border ${playbackRate === r ? 'bg-[#3b82f6] border-[#3b82f6] text-white' : 'border-zinc-700 text-zinc-400 hover:border-zinc-500'}`}
+                  className={`px-2 py-1 border ${playbackRate === r ? 'bg-[#2563eb] border-[#2563eb] text-white' : 'border-[#c5cfdd] text-[#64748b] hover:border-[#cbd5e1]'}`}
                 >×{r}</button>
               ))}
               <span className="ml-3">SAMPLE</span>
               <input
                 type="number" min={50} max={1000} step={50} value={sampleMs}
                 onChange={(e) => setSampleMs(Number(e.target.value) || 200)}
-                className="w-16 bg-[#18181b] border border-zinc-700 px-1 py-1 text-zinc-200"
+                className="w-16 bg-[#ffffff] border border-[#c5cfdd] px-1 py-1 text-[#1f2937]"
               />
               <span>ms</span>
             </div>
           </div>
 
-          <div className="w-[380px] flex-shrink-0 border-l border-[#3f3f46] flex flex-col bg-[#18181b]">
-            <div className="p-4 border-b border-[#3f3f46]">
-              <h3 className="text-[10px] font-black text-zinc-500 tracking-widest uppercase mb-3">SEQUENCE STATE</h3>
+          <div className="w-[380px] flex-shrink-0 border-l border-[#d9e1ec] flex flex-col bg-[#ffffff]">
+            <div className="p-4 border-b border-[#d9e1ec]">
+              <h3 className="text-[10px] font-black text-[#64748b] tracking-widest uppercase mb-3">SEQUENCE STATE</h3>
               <div className="grid grid-cols-4 gap-2">
                 {VIDEO_TARGETS.map((target, i) => {
                   const st = stepStatuses[i];
                   const colors =
-                    st === 'success' ? 'bg-[#22c55e] text-white border-[#22c55e]' :
-                    st === 'processing' ? 'bg-[#3b82f6] text-white border-[#3b82f6] animate-pulse' :
-                    st === 'error' ? 'bg-[#E50012] text-white border-[#E50012]' :
-                    'bg-[#27272a] text-zinc-500 border-zinc-700';
+                    st === 'success' ? 'bg-[#16a34a] text-white border-[#16a34a]' :
+                    st === 'processing' ? 'bg-[#2563eb] text-white border-[#2563eb] animate-pulse' :
+                    st === 'error' ? 'bg-[#CC0000] text-white border-[#CC0000]' :
+                    'bg-[#f8fafc] text-[#64748b] border-[#c5cfdd]';
                   return (
                     <div key={target} className={`px-1 py-3 text-center font-black border-2 ${colors}`}>
                       <div className="text-xs">{target.replace('Target', 'T')}</div>
@@ -1439,19 +1439,19 @@ function VideoAnalysisModal() {
                 })}
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] font-mono">
-                <div><span className="text-zinc-500">PRED</span> <span className="text-zinc-300">{String(currentFrame?.payload?.predicted_label ?? '-')}</span></div>
-                <div><span className="text-zinc-500">FINAL</span> <span className="text-zinc-300">{String(currentFrame?.payload?.final_label ?? '-')}</span></div>
-                <div><span className="text-zinc-500">EXPECT</span> <span className="text-zinc-300">{String(expected ?? '-')}</span></div>
-                <div><span className="text-zinc-500">CONF</span> <span className="text-zinc-300">{(Number(currentFrame?.payload?.confidence ?? 0) * 100).toFixed(0)}%</span></div>
+                <div><span className="text-[#64748b]">PRED</span> <span className="text-[#334155]">{String(currentFrame?.payload?.predicted_label ?? '-')}</span></div>
+                <div><span className="text-[#64748b]">FINAL</span> <span className="text-[#334155]">{String(currentFrame?.payload?.final_label ?? '-')}</span></div>
+                <div><span className="text-[#64748b]">EXPECT</span> <span className="text-[#334155]">{String(expected ?? '-')}</span></div>
+                <div><span className="text-[#64748b]">CONF</span> <span className="text-[#334155]">{(Number(currentFrame?.payload?.confidence ?? 0) * 100).toFixed(0)}%</span></div>
               </div>
             </div>
 
             <div className="flex-1 overflow-auto">
-              <div className="text-[10px] font-black text-zinc-500 tracking-widest uppercase px-4 py-2 sticky top-0 bg-[#18181b] border-b border-[#3f3f46]">
+              <div className="text-[10px] font-black text-[#64748b] tracking-widest uppercase px-4 py-2 sticky top-0 bg-[#ffffff] border-b border-[#d9e1ec]">
                 ANALYZED FRAMES ({frames.length})
               </div>
               {frames.length === 0 && (
-                <div className="p-4 text-xs text-zinc-500 text-center">분석 시작 직후입니다. 잠시 후 첫 프레임이 표시됩니다.</div>
+                <div className="p-4 text-xs text-[#64748b] text-center">분석 시작 직후입니다. 잠시 후 첫 프레임이 표시됩니다.</div>
               )}
               {[...frames].reverse().map((f, i) => {
                 const isCurrent = currentFrame === f;
@@ -1464,11 +1464,11 @@ function VideoAnalysisModal() {
                   <button
                     key={i}
                     onClick={() => handleSeek(f.timeSec)}
-                    className={`w-full px-4 py-2 flex items-center gap-2 text-left border-b border-[#27272a] hover:bg-[#27272a] transition-colors ${isCurrent ? 'bg-[#3b82f6]/15 border-l-2 border-l-[#3b82f6]' : ''}`}
+                    className={`w-full px-4 py-2 flex items-center gap-2 text-left border-b border-[#f8fafc] hover:bg-[#f8fafc] transition-colors ${isCurrent ? 'bg-[#2563eb]/15 border-l-2 border-l-[#2563eb]' : ''}`}
                   >
-                    <span className="font-mono text-[10px] text-zinc-500 w-12 tabular-nums">{f.timeSec.toFixed(2)}s</span>
-                    <span className={`font-mono text-xs flex-1 truncate ${isAnomaly ? 'text-amber-400' : 'text-zinc-300'}`}>{finalLabel}</span>
-                    <span className="font-mono text-[9px] text-zinc-500 uppercase">{eventType.replace(/_/g, ' ')}</span>
+                    <span className="font-mono text-[10px] text-[#64748b] w-12 tabular-nums">{f.timeSec.toFixed(2)}s</span>
+                    <span className={`font-mono text-xs flex-1 truncate ${isAnomaly ? 'text-amber-600' : 'text-[#334155]'}`}>{finalLabel}</span>
+                    <span className="font-mono text-[9px] text-[#64748b] uppercase">{eventType.replace(/_/g, ' ')}</span>
                   </button>
                 );
               })}
@@ -1510,7 +1510,7 @@ function ImageAnalysisModal() {
   const labelChip = (label: string) => {
     const isUnknown = label === 'unknown' || label === 'sequence_blocked';
     return (
-      <span className={`font-mono text-sm ${isUnknown ? 'text-amber-400' : 'text-zinc-100'}`}>{label || '-'}</span>
+      <span className={`font-mono text-sm ${isUnknown ? 'text-amber-600' : 'text-[#111827]'}`}>{label || '-'}</span>
     );
   };
 
@@ -1528,24 +1528,24 @@ function ImageAnalysisModal() {
 
   return (
     <div className="fixed inset-0 bg-black/85 z-[160] flex items-center justify-center p-3">
-      <div className="bg-[#18181b] border-2 border-[#a855f7] w-[96vw] h-[94vh] flex flex-col shadow-[0_0_50px_rgba(168,85,247,0.2)]">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#3f3f46] bg-[#27272a]">
+      <div className="bg-[#ffffff] border-2 border-[#CC0000] w-[96vw] h-[94vh] flex flex-col shadow-[0_24px_80px_rgba(204,0,0,0.18)]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#d9e1ec] bg-[#f8fafc]">
           <div className="flex items-center gap-3">
-            <div className="bg-[#a855f7]/10 p-2 border border-[#a855f7]/30">
-              <ImageIcon size={20} className="text-[#a855f7]" />
+            <div className="bg-[#CC0000]/10 p-2 border border-[#CC0000]/30">
+              <ImageIcon size={20} className="text-[#CC0000]" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-zinc-100 tracking-tighter uppercase leading-none">IMAGE ANALYSIS</h2>
-              <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest mt-1 truncate max-w-[60vw]">
+              <h2 className="text-lg font-black text-[#111827] tracking-tighter uppercase leading-none">IMAGE ANALYSIS</h2>
+              <p className="text-[10px] text-[#64748b] font-mono uppercase tracking-widest mt-1 truncate max-w-[60vw]">
                 {item?.filename ?? '-'} · {currentIndex + 1} / {total}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-xs font-mono text-zinc-300">{statusLabel}</div>
+            <div className="text-xs font-mono text-[#334155]">{statusLabel}</div>
             <button
               onClick={clearImageAnalysis}
-              className="p-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-zinc-300 hover:text-white"
+              className="p-2 bg-[#eef2f7] hover:bg-[#e2e8f0] border border-[#c5cfdd] text-[#334155] hover:text-[#111827]"
             >
               <X size={18} />
             </button>
@@ -1558,7 +1558,7 @@ function ImageAnalysisModal() {
             <button
               onClick={goPrev}
               disabled={currentIndex === 0}
-              className="absolute left-3 top-1/2 -translate-y-1/2 p-3 bg-[#18181b]/80 hover:bg-[#27272a] border border-zinc-700 text-zinc-300 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed z-10"
+              className="absolute left-3 top-1/2 -translate-y-1/2 p-3 bg-[#ffffff]/80 hover:bg-[#f8fafc] border border-[#c5cfdd] text-[#334155] hover:text-[#111827] disabled:opacity-20 disabled:cursor-not-allowed z-10"
               aria-label="이전 이미지"
             >
               <ChevronLeft size={24} />
@@ -1570,75 +1570,75 @@ function ImageAnalysisModal() {
                 className="max-w-full max-h-full object-contain"
               />
             ) : (
-              <div className="text-zinc-500 text-sm">이미지 없음</div>
+              <div className="text-[#64748b] text-sm">이미지 없음</div>
             )}
             <button
               onClick={goNext}
               disabled={currentIndex >= total - 1}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-[#18181b]/80 hover:bg-[#27272a] border border-zinc-700 text-zinc-300 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed z-10"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-[#ffffff]/80 hover:bg-[#f8fafc] border border-[#c5cfdd] text-[#334155] hover:text-[#111827] disabled:opacity-20 disabled:cursor-not-allowed z-10"
               aria-label="다음 이미지"
             >
               <ChevronRight size={24} />
             </button>
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 bg-[#18181b]/80 border border-zinc-700">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 bg-[#ffffff]/80 border border-[#c5cfdd]">
               {items.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setImageAnalysisIndex(i)}
-                  className={`w-2 h-2 ${i === currentIndex ? 'bg-[#a855f7]' : 'bg-zinc-600 hover:bg-zinc-500'}`}
+                  className={`w-2 h-2 ${i === currentIndex ? 'bg-[#CC0000]' : 'bg-[#cbd5e1] hover:bg-[#94a3b8]'}`}
                   aria-label={`${i + 1}번 이미지`}
                 />
               ))}
             </div>
           </div>
 
-          <div className="w-[380px] flex-shrink-0 border-l border-[#3f3f46] flex flex-col bg-[#18181b] overflow-auto">
-            <div className="p-4 border-b border-[#3f3f46]">
-              <h3 className="text-[10px] font-black text-zinc-500 tracking-widest uppercase mb-3">PREDICTION</h3>
+          <div className="w-[380px] flex-shrink-0 border-l border-[#d9e1ec] flex flex-col bg-[#ffffff] overflow-auto">
+            <div className="p-4 border-b border-[#d9e1ec]">
+              <h3 className="text-[10px] font-black text-[#64748b] tracking-widest uppercase mb-3">PREDICTION</h3>
               {!result && !itemError && (
-                <div className="text-xs text-zinc-500 font-mono">분석 결과 대기 중...</div>
+                <div className="text-xs text-[#64748b] font-mono">분석 결과 대기 중...</div>
               )}
               {itemError && (
-                <div className="text-xs text-amber-400 font-mono">에러: {itemError}</div>
+                <div className="text-xs text-amber-600 font-mono">에러: {itemError}</div>
               )}
               {result && (
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
                     <div className="flex flex-col">
-                      <span className="text-zinc-500 uppercase tracking-widest">Predicted</span>
+                      <span className="text-[#64748b] uppercase tracking-widest">Predicted</span>
                       {labelChip(result.predicted_label)}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-zinc-500 uppercase tracking-widest">Final</span>
+                      <span className="text-[#64748b] uppercase tracking-widest">Final</span>
                       {labelChip(result.final_label)}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-zinc-500 uppercase tracking-widest">Confidence</span>
-                      <span className="font-mono text-sm text-zinc-100 tabular-nums">{(result.confidence * 100).toFixed(1)}%</span>
+                      <span className="text-[#64748b] uppercase tracking-widest">Confidence</span>
+                      <span className="font-mono text-sm text-[#111827] tabular-nums">{(result.confidence * 100).toFixed(1)}%</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-zinc-500 uppercase tracking-widest">Decision</span>
-                      <span className="font-mono text-xs text-zinc-300">{result.decision_type ?? '-'}</span>
+                      <span className="text-[#64748b] uppercase tracking-widest">Decision</span>
+                      <span className="font-mono text-xs text-[#334155]">{result.decision_type ?? '-'}</span>
                     </div>
                   </div>
                   {(result.is_unknown || result.ambiguous || result.reinspect_needed || result.anomaly_flag) && (
                     <div className="flex flex-wrap gap-1 pt-1">
-                      {result.is_unknown && <span className="px-2 py-0.5 text-[9px] font-black bg-zinc-700 text-zinc-200 uppercase tracking-widest">UNKNOWN</span>}
+                      {result.is_unknown && <span className="px-2 py-0.5 text-[9px] font-black bg-[#e2e8f0] text-[#1f2937] uppercase tracking-widest">UNKNOWN</span>}
                       {result.ambiguous && <span className="px-2 py-0.5 text-[9px] font-black bg-amber-700 text-amber-100 uppercase tracking-widest">AMBIGUOUS</span>}
                       {result.reinspect_needed && <span className="px-2 py-0.5 text-[9px] font-black bg-yellow-700 text-yellow-100 uppercase tracking-widest">REINSPECT</span>}
-                      {result.anomaly_flag && <span className="px-2 py-0.5 text-[9px] font-black bg-[#E50012] text-white uppercase tracking-widest">ALARM</span>}
+                      {result.anomaly_flag && <span className="px-2 py-0.5 text-[9px] font-black bg-[#CC0000] text-white uppercase tracking-widest">ALARM</span>}
                     </div>
                   )}
                   {result.decision_reason && (
-                    <div className="text-[10px] font-mono text-zinc-500 pt-1">사유: {result.decision_reason}</div>
+                    <div className="text-[10px] font-mono text-[#64748b] pt-1">사유: {result.decision_reason}</div>
                   )}
                 </div>
               )}
             </div>
 
             {result?.scores && (
-              <div className="p-4 border-b border-[#3f3f46]">
-                <h3 className="text-[10px] font-black text-zinc-500 tracking-widest uppercase mb-3">CLASSIFIER SCORES</h3>
+              <div className="p-4 border-b border-[#d9e1ec]">
+                <h3 className="text-[10px] font-black text-[#64748b] tracking-widest uppercase mb-3">CLASSIFIER SCORES</h3>
                 <div className="space-y-2">
                   {targets.map((t) => {
                     const score = Number(result.scores?.[t] ?? 0);
@@ -1648,14 +1648,14 @@ function ImageAnalysisModal() {
                     return (
                       <div key={t}>
                         <div className="flex items-center justify-between text-[10px] font-mono mb-1">
-                          <span className="text-zinc-300">{t}</span>
-                          <span className={`tabular-nums ${passed ? 'text-[#22c55e]' : 'text-zinc-500'}`}>
+                          <span className="text-[#334155]">{t}</span>
+                          <span className={`tabular-nums ${passed ? 'text-[#16a34a]' : 'text-[#64748b]'}`}>
                             {(score).toFixed(4)}{threshold > 0 && ` / ${threshold.toFixed(2)}`}
                           </span>
                         </div>
-                        <div className="w-full h-1.5 bg-zinc-800 overflow-hidden">
+                        <div className="w-full h-1.5 bg-[#eef2f7] overflow-hidden">
                           <div
-                            className={`h-full transition-all ${passed ? 'bg-[#22c55e]' : 'bg-zinc-500'}`}
+                            className={`h-full transition-all ${passed ? 'bg-[#16a34a]' : 'bg-[#94a3b8]'}`}
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -1666,7 +1666,7 @@ function ImageAnalysisModal() {
               </div>
             )}
 
-            <div className="px-4 py-3 text-[10px] font-mono text-zinc-500">
+            <div className="px-4 py-3 text-[10px] font-mono text-[#64748b]">
               ←/→ 키로도 이미지 전환 가능
             </div>
           </div>
@@ -1909,7 +1909,7 @@ export default function App() {
   const isItemActive = (item: ViewItem) => activeItems.some(i => i.type === item.type && i.id === item.id);
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#18181b] text-zinc-200">
+    <div className="flex flex-col h-screen w-full bg-[#f5f7fb] text-[#1f2937]">
       {sourceMode && <MobileSourceView onExit={() => setSourceMode(false)} />}
       <SettingsModal />
       <AdminModal />
@@ -1927,17 +1927,17 @@ export default function App() {
       )}
 
       {/* 헤더 */}
-      <header className="flex items-center justify-between h-14 px-4 bg-[#27272a] border-b-2 border-[#E50012] shrink-0">
+      <header className="flex items-center justify-between h-14 px-4 bg-[#f8fafc] border-b-2 border-[#CC0000] shrink-0">
         <div className="flex items-center gap-4">
           <img src="/Canon_icon.svg" alt="Canon Logo" width={100} height={24}
             className="object-contain cursor-pointer hover:opacity-80 transition-opacity"
             onClick={handleLogoClick}
           />
-          <span className="text-sm font-bold tracking-wider text-zinc-400 border-l border-zinc-600 pl-4">{t.title}</span>
+          <span className="text-sm font-bold tracking-wider text-[#64748b] border-l border-[#c5cfdd] pl-4">{t.title}</span>
         </div>
         <div className="flex items-center gap-6">
           {isAdminAuth && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-[#E50012] border border-[#ff3040] text-white font-black text-[10px] tracking-widest shadow-[0_0_10px_rgba(229,0,18,0.5)] animate-pulse">
+            <div className="flex items-center gap-2 px-3 py-1 bg-[#CC0000] border border-[#E21A1A] text-white font-black text-[10px] tracking-widest shadow-[0_0_10px_rgba(204,0,0,0.22)] animate-pulse">
               <ShieldAlert size={12} />
               ADMIN ACTIVE
             </div>
@@ -1945,22 +1945,22 @@ export default function App() {
           <div className="flex items-center gap-3">
             {wsConnected ? (
               <>
-                <span className="flex h-2.5 w-2.5 relative"><span className="animate-ping absolute inline-flex h-full w-full bg-[#22c55e] opacity-75"></span><span className="relative inline-flex h-2.5 w-2.5 bg-[#22c55e]"></span></span>
-                <span className="text-xs font-medium text-zinc-300 hidden sm:block">LIVE</span>
+                <span className="flex h-2.5 w-2.5 relative"><span className="animate-ping absolute inline-flex h-full w-full bg-[#16a34a] opacity-75"></span><span className="relative inline-flex h-2.5 w-2.5 bg-[#16a34a]"></span></span>
+                <span className="text-xs font-medium text-[#334155] hidden sm:block">LIVE</span>
                 <LivenessIndicator />
               </>
             ) : (
-              <><Server size={13} className="text-zinc-500" /><span className="text-xs text-zinc-500">OFFLINE</span></>
+              <><Server size={13} className="text-[#64748b]" /><span className="text-xs text-[#64748b]">OFFLINE</span></>
             )}
           </div>
-          <button onClick={() => setSettingsOpen(true)} className="p-2 bg-[#18181b] hover:bg-[#3f3f46] border border-[#3f3f46] hover:border-zinc-400 text-zinc-300 hover:text-white transition-colors">
+          <button onClick={() => setSettingsOpen(true)} className="p-2 bg-[#ffffff] hover:bg-[#d9e1ec] border border-[#d9e1ec] hover:border-[#94a3b8] text-[#334155] hover:text-[#111827] transition-colors">
             <Settings size={18} />
           </button>
           <button 
             onClick={() => setSourceMode(true)} 
-            className="p-2 bg-[#18181b] hover:bg-[#3f3f46] border border-[#3f3f46] hover:border-zinc-400 text-zinc-300 hover:text-white transition-colors flex items-center gap-2 group"
+            className="p-2 bg-[#ffffff] hover:bg-[#d9e1ec] border border-[#d9e1ec] hover:border-[#94a3b8] text-[#334155] hover:text-[#111827] transition-colors flex items-center gap-2 group"
           >
-            <Video size={18} className="group-hover:text-[#E50012]" />
+            <Video size={18} className="group-hover:text-[#CC0000]" />
             <span className="text-[10px] font-black hidden lg:block">STREAM SOURCE</span>
           </button>
         </div>
@@ -1973,10 +1973,10 @@ export default function App() {
         <aside className="w-52 flex flex-col gap-2 shrink-0 h-full">
 
           {/* 카메라 목록 */}
-          <div className="flex-none bg-[#27272a] border border-[#3f3f46] flex flex-col shadow-sm">
-            <div className="flex items-center gap-2 px-3 py-2 border-b border-[#3f3f46] shrink-0">
-              <Video size={14} className="text-zinc-400" />
-              <span className="text-xs font-bold text-zinc-300 uppercase tracking-widest">{t.videoSources}</span>
+          <div className="flex-none bg-[#f8fafc] border border-[#d9e1ec] flex flex-col shadow-sm">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-[#d9e1ec] shrink-0">
+              <Video size={14} className="text-[#64748b]" />
+              <span className="text-xs font-bold text-[#334155] uppercase tracking-widest">{t.videoSources}</span>
             </div>
             <div className="overflow-y-auto custom-scrollbar">
               {CAMERA_LIST.map((cam) => {
@@ -1995,16 +1995,16 @@ export default function App() {
                       }
                     }}
                     draggable onDragStart={(e) => handleDragStart(e, item)}
-                    className={`px-3 py-2 border-b border-[#3f3f46] cursor-pointer transition-all flex items-center justify-between select-none ${active ? 'bg-[#E50012]/15 border-l-2 border-l-[#E50012]' : 'hover:bg-[#3f3f46]'}`}
+                    className={`px-3 py-2 border-b border-[#d9e1ec] cursor-pointer transition-all flex items-center justify-between select-none ${active ? 'bg-[#CC0000]/15 border-l-2 border-l-[#CC0000]' : 'hover:bg-[#d9e1ec]'}`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className={`w-1.5 h-1.5 shrink-0 ${active ? 'bg-[#E50012]' : 'bg-zinc-600'}`} />
+                      <div className={`w-1.5 h-1.5 shrink-0 ${active ? 'bg-[#CC0000]' : 'bg-[#cbd5e1]'}`} />
                       <div className="min-w-0">
-                        <div className="text-xs font-bold text-zinc-200">{cam.id}</div>
-                        <div className="text-[10px] text-zinc-500 truncate">{cam.name.includes(' - ') ? cam.name.split(' - ')[1] : cam.name}</div>
+                        <div className="text-xs font-bold text-[#1f2937]">{cam.id}</div>
+                        <div className="text-[10px] text-[#64748b] truncate">{cam.name.includes(' - ') ? cam.name.split(' - ')[1] : cam.name}</div>
                       </div>
                     </div>
-                    {active && <Camera size={12} className="text-[#E50012] shrink-0" />}
+                    {active && <Camera size={12} className="text-[#CC0000] shrink-0" />}
                   </div>
                 );
               })}
@@ -2012,38 +2012,38 @@ export default function App() {
           </div>
 
           {/* 이미지 로그 목록 */}
-          <div className="flex-1 bg-[#27272a] border border-[#3f3f46] flex flex-col min-h-0 shadow-sm">
-            <div className="flex items-center gap-2 px-3 py-2 border-b border-[#3f3f46] shrink-0">
-              <ImageIcon size={14} className="text-zinc-400" />
-              <span className="text-xs font-bold text-zinc-300 uppercase tracking-widest">{t.imageLogs}</span>
-              <span className="ml-auto text-[10px] text-zinc-600 font-mono">{imageLogs.length}</span>
+          <div className="flex-1 bg-[#f8fafc] border border-[#d9e1ec] flex flex-col min-h-0 shadow-sm">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-[#d9e1ec] shrink-0">
+              <ImageIcon size={14} className="text-[#64748b]" />
+              <span className="text-xs font-bold text-[#334155] uppercase tracking-widest">{t.imageLogs}</span>
+              <span className="ml-auto text-[10px] text-[#94a3b8] font-mono">{imageLogs.length}</span>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar">
               {imageLogs.length === 0 ? (
-                <div className="px-3 py-4 text-center text-zinc-600 font-mono text-[10px]">NO LOGS YET</div>
+                <div className="px-3 py-4 text-center text-[#94a3b8] font-mono text-[10px]">NO LOGS YET</div>
               ) : (
                 imageLogs.map((img) => {
                   const item: ViewItem = { type: 'image', id: img.id };
                   const active = isItemActive(item);
-                  const sc = img.status === 'success' ? '#22c55e' : img.status === 'error' ? '#ef4444' : '#f59e0b';
+                  const sc = img.status === 'success' ? '#16a34a' : img.status === 'error' ? '#dc2626' : '#d97706';
                   return (
                     <div
                       key={img.id}
                       onClick={() => handleItemTap(item)}
                       draggable onDragStart={(e) => handleDragStart(e, item)}
-                      className={`px-2 py-1.5 border-b border-[#3f3f46] flex items-center gap-2 cursor-pointer transition-colors select-none ${active ? 'bg-[#E50012]/15 border-l-2 border-l-[#E50012]' : 'hover:bg-[#3f3f46]'}`}
+                      className={`px-2 py-1.5 border-b border-[#d9e1ec] flex items-center gap-2 cursor-pointer transition-colors select-none ${active ? 'bg-[#CC0000]/15 border-l-2 border-l-[#CC0000]' : 'hover:bg-[#d9e1ec]'}`}
                     >
-                      <div className="w-8 h-8 bg-zinc-900 border border-zinc-700 shrink-0 overflow-hidden">
+                      <div className="w-8 h-8 bg-[#e2e8f0] border border-[#c5cfdd] shrink-0 overflow-hidden">
                         {img.image_url
                           ? <img src={img.image_url} alt={img.id} className="w-full h-full object-cover" />
-                          : <ImageIcon size={14} className="text-zinc-600 m-auto mt-1.5" />}
+                          : <ImageIcon size={14} className="text-[#94a3b8] m-auto mt-1.5" />}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-bold text-zinc-200 truncate">{img.id}</span>
+                          <span className="text-[10px] font-bold text-[#1f2937] truncate">{img.id}</span>
                           <span className="text-[8px] font-bold px-1 border" style={{ color: sc, borderColor: sc }}>T{img.target_idx}</span>
                         </div>
-                        <span className="text-[9px] text-zinc-500 font-mono">{img.cam} · {img.time}</span>
+                        <span className="text-[9px] text-[#64748b] font-mono">{img.cam} · {img.time}</span>
                       </div>
                     </div>
                   );
@@ -2055,12 +2055,12 @@ export default function App() {
 
         {/* ── 중앙 뷰어 ── */}
         <div
-          className={`flex-1 flex flex-col min-h-0 relative transition-all duration-200 ${isDragOver ? 'ring-2 ring-[#22c55e] ring-offset-2 ring-offset-[#18181b]' : ''}`}
+          className={`flex-1 flex flex-col min-h-0 relative transition-all duration-200 ${isDragOver ? 'ring-2 ring-[#16a34a] ring-offset-2 ring-offset-[#ffffff]' : ''}`}
           onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}
         >
           {isDragOver && (
-            <div className="absolute inset-0 z-50 bg-[#22c55e]/10 flex items-center justify-center pointer-events-none">
-              <div className="bg-[#27272a] border border-[#22c55e] text-[#22c55e] px-8 py-4 text-lg font-bold tracking-widest flex items-center gap-3">
+            <div className="absolute inset-0 z-50 bg-[#16a34a]/10 flex items-center justify-center pointer-events-none">
+              <div className="bg-[#f8fafc] border border-[#16a34a] text-[#16a34a] px-8 py-4 text-lg font-bold tracking-widest flex items-center gap-3">
                 <BoxSelect size={28} />{t.dropToSplit}
               </div>
             </div>
@@ -2082,7 +2082,7 @@ export default function App() {
                   className={`min-h-0 transition-all duration-150 ${
                     isDraggingSrc ? 'opacity-40 scale-[0.97]' : ''
                   } ${
-                    isDraggingOver ? 'ring-2 ring-[#22c55e] ring-inset' : ''
+                    isDraggingOver ? 'ring-2 ring-[#16a34a] ring-inset' : ''
                   }`}
                   style={{ cursor: 'grab' }}
                 >

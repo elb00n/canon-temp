@@ -1,12 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-  --color-zinc-950: #09090b;
+  --color-canon-red: #CC0000;
+  --color-canon-red-dark: #A50000;
+  --color-canon-surface: #f8fafc;
 }
 
 :root {
-  background-color: #18181b;
-  color: #e4e4e7;
+  background-color: #f5f7fb;
+  color: #111827;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
@@ -25,31 +27,31 @@ body {
   height: 28px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #18181b;
-  border-left: 2px solid #27272a;
+  background: #f5f7fb;
+  border-left: 2px solid #d9e1ec;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #52525b;
-  border: 4px solid #18181b;
+  background: #c5cfdd;
+  border: 4px solid #f5f7fb;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover,
 .custom-scrollbar::-webkit-scrollbar-thumb:active {
-  background: #a1a1aa;
+  background: #64748b;
 }
 
 /* 대형 상하 스크롤 화살표 버튼 (터치 친화적) */
 .custom-scrollbar::-webkit-scrollbar-button:single-button {
-  background-color: #3f3f46;
+  background-color: #eef2f7;
   display: block;
   height: 44px;
 }
 .custom-scrollbar::-webkit-scrollbar-button:single-button:active {
-  background-color: #E50012;
+  background-color: #CC0000;
 }
 
 /* 위쪽 화살표 SVG 삽입 */
 .custom-scrollbar::-webkit-scrollbar-button:single-button:vertical:decrement {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'><polyline points='18 15 12 9 6 15'></polyline></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111827' stroke-width='3'><polyline points='18 15 12 9 6 15'></polyline></svg>");
   background-size: 16px;
   background-position: center;
   background-repeat: no-repeat;
@@ -62,7 +64,7 @@ body {
 }
 /* 아래쪽 화살표 SVG 삽입 */
 .custom-scrollbar::-webkit-scrollbar-button:single-button:vertical:increment {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111827' stroke-width='3'><polyline points='6 9 12 15 18 9'></polyline></svg>");
   background-size: 16px;
   background-position: center;
   background-repeat: no-repeat;
