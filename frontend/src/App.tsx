@@ -1918,6 +1918,20 @@ export default function App() {
     }))
   ];
 
+  // 송출이 끊기거나 사라진 카메라 패널을 자동으로 메인 뷰에서 제거.
+  // 이렇게 안 하면 PC에서 「끊기」를 눌러도 panel이 그대로 남아 빈 상태
+  // 가이드(검사를 시작하세요)가 표시되지 않음. 이미지 item은 영향 없음.
+  useEffect(() => {
+    const validCameraIds = new Set<string>([
+      ...(isDevAuth ? ['CAM_00'] : []),
+      ...onlineCameraIds,
+    ]);
+    setActiveItems((prev) => {
+      const next = prev.filter((item) => item.type !== 'camera' || validCameraIds.has(item.id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [onlineCameraIds, isDevAuth]);
+
   const calcSteps = (camData: CameraData | null): StepStatus[] => {
     const steps: StepStatus[] = ['idle', 'idle', 'idle', 'idle'];
     if (!camData?.logic) return steps;
