@@ -9,12 +9,15 @@ export type ViewItem =
 export interface CameraData {
   timestamp?: string;
   predicted_label?: string;
+  final_label?: string;
   confidence?: number;
   effective_label?: string;
   confirmed_state?: string;
   allowed_transition?: boolean;
   inference?: boolean;
   is_unknown?: boolean;
+  ambiguous?: boolean;
+  reinspect_needed?: boolean;
   logic?: Record<string, unknown>;
   display?: Record<string, string>;
 }

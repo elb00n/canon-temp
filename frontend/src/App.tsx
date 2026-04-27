@@ -12,6 +12,24 @@ import { locales } from "./locales";
 
 export type StepStatus = 'idle' | 'processing' | 'success' | 'error';
 export type ViewItem = { type: 'camera'; id: string } | { type: 'image'; id: string };
+type StreamModelMode = 'real' | 'mock';
+type StreamConnectionState = 'idle' | 'connecting' | 'streaming' | 'error';
+
+const DASHBOARD_WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
+
+function buildSourceWsUrl(cameraId: string, modelMode: StreamModelMode, scenario: string) {
+  const base = DASHBOARD_WS_URL.replace(/\/$/, '');
+  const sourceBase = base.endsWith('/ws') ? `${base}/source` : `${base}/ws/source`;
+  const url = new URL(sourceBase);
+  url.searchParams.set('cameraId', cameraId);
+  url.searchParams.set('model_mode', modelMode);
+  if (scenario.trim()) url.searchParams.set('scenario', scenario.trim());
+  return url.toString();
+}
+
+function parseTargetOrder(value: string) {
+  return value.split(',').map(item => item.trim()).filter(Boolean);
+}
 
 // ─── UI 생동감 표시기 ─────────────────────────────────────────────────────────
 function LivenessIndicator() {
@@ -864,97 +882,264 @@ function AdminModal() {
 function MobileSourceView({ onExit }: { onExit: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [streaming, setStreaming] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+  const intervalRef = useRef<ReturnType<typeof window.setInterval> | null>(null);
+  const sentCountRef = useRef(0);
+  const updateLiveData = useAppStore((state) => state.updateLiveData);
+
+  const [connectionState, setConnectionState] = useState<StreamConnectionState>('idle');
+  const [cameraId, setCameraId] = useState('CAM_WS');
+  const [modelMode, setModelMode] = useState<StreamModelMode>('real');
+  const [scenario, setScenario] = useState('normal_target2_accept');
+  const [targetOrder, setTargetOrder] = useState('Target1,Target2,Target3,Target4');
+  const [sampleMs, setSampleMs] = useState(500);
+  const [frameWidth, setFrameWidth] = useState(320);
+  const [jpegQuality, setJpegQuality] = useState(0.6);
+  const [saveArtifacts, setSaveArtifacts] = useState(false);
+  const [stats, setStats] = useState({
+    sent: 0,
+    received: 0,
+    predicted: '-',
+    finalLabel: '-',
+    message: 'READY',
+  });
+
+  const streaming = connectionState === 'streaming' || connectionState === 'connecting';
+
+  const stopStreaming = useCallback(() => {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    wsRef.current?.close();
+    wsRef.current = null;
+    setConnectionState('idle');
+  }, []);
 
   useEffect(() => {
-    // 카메라 권한 요청 및 시작
     async function startCamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "environment", width: 640, height: 480 },
-          audio: false 
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: 1280, height: 720 },
+          audio: false,
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
       } catch (err) {
-        console.error("Camera access failed:", err);
-        alert("카메라 권한이 필요합니다.");
+        console.error('Camera access failed:', err);
+        alert('Camera permission is required.');
       }
     }
     startCamera();
 
     return () => {
       if (videoRef.current?.srcObject) {
-        (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+        (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
       }
-      wsRef.current?.close();
+      stopStreaming();
     };
-  }, []);
+  }, [stopStreaming]);
+
+  const sendFrame = useCallback((ws: WebSocket) => {
+    if (!videoRef.current || !canvasRef.current || ws.readyState !== WebSocket.OPEN) return;
+    const video = videoRef.current;
+    if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+
+    const sourceWidth = video.videoWidth || 640;
+    const sourceHeight = video.videoHeight || 480;
+    const height = Math.max(1, Math.round(frameWidth * (sourceHeight / sourceWidth)));
+    const canvas = canvasRef.current;
+    canvas.width = frameWidth;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0, frameWidth, height);
+    const frame = canvas.toDataURL('image/jpeg', jpegQuality);
+    const nextSent = sentCountRef.current + 1;
+    sentCountRef.current = nextSent;
+    ws.send(JSON.stringify({
+      cameraId,
+      frame,
+      model_mode: modelMode,
+      scenario,
+      target_order: parseTargetOrder(targetOrder),
+      save_artifacts: saveArtifacts,
+      reset_state: nextSent === 1,
+    }));
+    setStats(prev => ({ ...prev, sent: nextSent }));
+  }, [cameraId, frameWidth, jpegQuality, modelMode, saveArtifacts, scenario, targetOrder]);
+
+  const startStreaming = () => {
+    if (streaming) return;
+    sentCountRef.current = 0;
+    setStats({ sent: 0, received: 0, predicted: '-', finalLabel: '-', message: 'CONNECTING' });
+    setConnectionState('connecting');
+
+    const ws = new WebSocket(buildSourceWsUrl(cameraId, modelMode, scenario));
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setConnectionState('streaming');
+      sendFrame(ws);
+      intervalRef.current = window.setInterval(() => sendFrame(ws), Math.max(150, sampleMs));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data as string) as { type?: string; cameraId?: string; payload?: CameraData };
+        if (message.type === 'inference' && message.cameraId && message.payload) {
+          updateLiveData(message.cameraId, message.payload);
+          setStats(prev => ({
+            ...prev,
+            received: prev.received + 1,
+            predicted: message.payload?.predicted_label || '-',
+            finalLabel: message.payload?.final_label || message.payload?.effective_label || '-',
+            message: message.payload?.display?.system_message || message.payload?.confirmed_state || 'UPDATED',
+          }));
+        }
+      } catch {
+        setStats(prev => ({ ...prev, message: 'BAD MESSAGE' }));
+      }
+    };
+
+    ws.onerror = () => {
+      setConnectionState('error');
+      setStats(prev => ({ ...prev, message: 'WS ERROR' }));
+    };
+
+    ws.onclose = () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      setConnectionState(prev => prev === 'error' ? 'error' : 'idle');
+    };
+  };
 
   const toggleStreaming = () => {
     if (streaming) {
-      wsRef.current?.close();
-      setStreaming(false);
-    } else {
-      const ws = new WebSocket(`${import.meta.env.VITE_WS_URL}/source`);
-      ws.onopen = () => setStreaming(true);
-      ws.onclose = () => setStreaming(false);
-      wsRef.current = ws;
-
-      const captureFrame = () => {
-        if (ws.readyState === WebSocket.OPEN && videoRef.current && canvasRef.current) {
-          const ctx = canvasRef.current.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(videoRef.current, 0, 0, 320, 240); // 320x240으로 경량화
-            const data = canvasRef.current.toDataURL("image/jpeg", 0.6); // 퀄리티 0.6
-            ws.send(data);
-          }
-          requestAnimationFrame(captureFrame);
-        }
-      };
-      requestAnimationFrame(captureFrame);
+      stopStreaming();
+      return;
     }
+    startStreaming();
   };
 
   return (
-    <div className="fixed inset-0 bg-[#18181b] z-[500] flex flex-col p-6 items-center justify-center space-y-8">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-black text-[#E50012] tracking-tighter uppercase italic">Mobile Source Mode</h2>
-        <p className="text-zinc-500 text-xs font-mono uppercase tracking-widest">Bridging Handheld Data to Dashboard</p>
+    <div className="fixed inset-0 bg-[#18181b] z-[500] grid grid-cols-1 lg:grid-cols-[minmax(280px,420px)_1fr] gap-4 p-4 overflow-y-auto">
+      <div className="bg-[#27272a] border border-[#3f3f46] flex flex-col min-h-0">
+        <div className="px-4 py-3 border-b border-[#3f3f46] flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-black text-[#E50012] tracking-tighter uppercase italic">Realtime Source</h2>
+            <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">{connectionState.toUpperCase()}</div>
+          </div>
+          <button onClick={onExit} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-transparent hover:border-zinc-600">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
+          <label className="block space-y-1">
+            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Camera ID</span>
+            <input value={cameraId} disabled={streaming} onChange={(e) => setCameraId(e.target.value || 'CAM_WS')} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
+          </label>
+
+          <div className="grid grid-cols-2 gap-2">
+            {(['real', 'mock'] as const).map(mode => (
+              <button
+                key={mode}
+                disabled={streaming}
+                onClick={() => setModelMode(mode)}
+                className={`py-3 border text-xs font-black uppercase tracking-widest ${modelMode === mode ? 'bg-[#E50012] border-[#E50012] text-white' : 'bg-[#18181b] border-[#3f3f46] text-zinc-400 hover:text-white'}`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+
+          <label className="block space-y-1">
+            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Scenario</span>
+            <select disabled={streaming} value={scenario} onChange={(e) => setScenario(e.target.value)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]">
+              <option value="normal_target2_accept">normal_target2_accept</option>
+              <option value="single_pass_accept">single_pass_accept</option>
+              <option value="unknown_no_pass">unknown_no_pass</option>
+              <option value="ambiguous_reinspect">ambiguous_reinspect</option>
+              <option value="poor_detector_reinspect">poor_detector_reinspect</option>
+              <option value="no_detection">no_detection</option>
+            </select>
+          </label>
+
+          <label className="block space-y-1">
+            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Target Order</span>
+            <input disabled={streaming} value={targetOrder} onChange={(e) => setTargetOrder(e.target.value)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block space-y-1">
+              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Sample ms</span>
+              <input type="number" min={150} max={2000} step={50} disabled={streaming} value={sampleMs} onChange={(e) => setSampleMs(Number(e.target.value) || 500)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
+            </label>
+            <label className="block space-y-1">
+              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Width</span>
+              <input type="number" min={224} max={960} step={32} disabled={streaming} value={frameWidth} onChange={(e) => setFrameWidth(Number(e.target.value) || 320)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
+            </label>
+          </div>
+
+          <label className="block space-y-2">
+            <div className="flex justify-between text-[10px] text-zinc-500 font-black uppercase tracking-widest">
+              <span>JPEG Quality</span>
+              <span>{Math.round(jpegQuality * 100)}%</span>
+            </div>
+            <input type="range" min={0.3} max={0.9} step={0.05} disabled={streaming} value={jpegQuality} onChange={(e) => setJpegQuality(Number(e.target.value))} className="w-full accent-[#E50012]" />
+          </label>
+
+          <label className="flex items-center justify-between bg-[#18181b] border border-[#3f3f46] px-3 py-3">
+            <span className="text-xs text-zinc-300 font-black uppercase tracking-widest">Save Artifacts</span>
+            <input type="checkbox" checked={saveArtifacts} disabled={streaming} onChange={(e) => setSaveArtifacts(e.target.checked)} className="h-4 w-4 accent-[#E50012]" />
+          </label>
+        </div>
+
+        <div className="p-4 border-t border-[#3f3f46] space-y-3">
+          <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
+            <div className="bg-[#18181b] border border-[#3f3f46] p-2 text-zinc-400">SENT <span className="float-right text-zinc-100">{stats.sent}</span></div>
+            <div className="bg-[#18181b] border border-[#3f3f46] p-2 text-zinc-400">RESULT <span className="float-right text-zinc-100">{stats.received}</span></div>
+            <div className="bg-[#18181b] border border-[#3f3f46] p-2 text-zinc-400">PRED <span className="float-right text-zinc-100">{stats.predicted}</span></div>
+            <div className="bg-[#18181b] border border-[#3f3f46] p-2 text-zinc-400">FINAL <span className="float-right text-zinc-100">{stats.finalLabel}</span></div>
+          </div>
+          <div className={`border px-3 py-2 text-center text-xs font-black uppercase tracking-widest ${connectionState === 'error' ? 'border-[#ef4444] text-[#ef4444]' : streaming ? 'border-[#22c55e] text-[#22c55e]' : 'border-[#3f3f46] text-zinc-500'}`}>
+            {stats.message}
+          </div>
+          <button
+            onClick={toggleStreaming}
+            className={`w-full py-4 text-base font-black tracking-widest uppercase transition-all shadow-xl active:scale-95 ${streaming ? 'bg-zinc-800 text-red-500 border border-red-500/30' : 'bg-[#E50012] text-white hover:bg-white hover:text-black'}`}
+          >
+            {streaming ? 'STOP STREAM' : 'START STREAM'}
+          </button>
+        </div>
       </div>
 
-      <div className="relative w-full max-w-sm aspect-square bg-black border-2 border-zinc-800 rounded-3xl overflow-hidden shadow-2xl">
-        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-        <canvas ref={canvasRef} width={320} height={240} className="hidden" />
-        
+      <div className="relative bg-black border border-[#3f3f46] overflow-hidden min-h-0 flex items-center justify-center">
+        <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-contain" />
+        <canvas ref={canvasRef} className="hidden" />
+
         {streaming && (
-          <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 bg-red-600 animate-pulse rounded-full text-[10px] font-black text-white uppercase italic">
+          <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 bg-red-600 animate-pulse text-[10px] font-black text-white uppercase italic">
             <Activity size={10} /> ON-AIR
           </div>
         )}
-      </div>
 
-      <div className="flex flex-col w-full max-w-sm gap-4">
-        <button 
-          onClick={toggleStreaming}
-          className={`w-full py-6 text-xl font-black tracking-widest uppercase transition-all shadow-xl active:scale-95 ${streaming ? 'bg-zinc-800 text-red-500' : 'bg-[#E50012] text-white hover:bg-white hover:text-black'}`}
-        >
-          {streaming ? "STOP TRANSMITTING" : "START TRANSMITTING"}
-        </button>
-        <button onClick={onExit} className="w-full py-4 bg-zinc-900 border border-zinc-700 text-zinc-500 font-bold hover:text-white transition-colors">BACK TO DASHBOARD</button>
-      </div>
-      
-      <div className="text-[10px] text-zinc-700 font-mono italic">
-        ※ This view relays your camera frames to CAM_01 in real-time.
+        <div className="absolute left-4 bottom-4 bg-[#18181b]/90 border border-[#3f3f46] px-3 py-2 font-mono text-[10px] text-zinc-400">
+          <div>{buildSourceWsUrl(cameraId, modelMode, scenario)}</div>
+          <div>{frameWidth}px / {sampleMs}ms / {modelMode}</div>
+        </div>
       </div>
     </div>
   );
 }
 
 
-// ─── 메인 앱 ──────────────────────────────────────────────────────────────────
 export default function App() {
   const { 
     language, setSettingsOpen, liveData, updateLiveData, imageLogs, 
@@ -1072,7 +1257,7 @@ export default function App() {
 
   // WebSocket — popup img도 동시 업데이트
   useEffect(() => {
-    const ws = new WebSocket(import.meta.env.VITE_WS_URL);
+    const ws = new WebSocket(DASHBOARD_WS_URL);
     ws.onopen = () => setWsConnected(true);
     ws.onclose = () => setWsConnected(false);
     ws.onerror = () => setWsConnected(false);
@@ -1090,6 +1275,10 @@ export default function App() {
             const el = document.getElementById(`video-stream-${prefix}${batch.cameraId as string}`) as HTMLImageElement | null;
             if (el) { el.src = src; el.classList.remove('hidden'); }
           });
+          return;
+        }
+        if (batch.type === 'inference' && batch.cameraId) {
+          updateLiveData(batch.cameraId as string, batch.payload as CameraData);
           return;
         }
         if (Array.isArray(batch)) {
@@ -1201,7 +1390,7 @@ export default function App() {
             className="p-2 bg-[#18181b] hover:bg-[#3f3f46] border border-[#3f3f46] hover:border-zinc-400 text-zinc-300 hover:text-white transition-colors flex items-center gap-2 group"
           >
             <Video size={18} className="group-hover:text-[#E50012]" />
-            <span className="text-[10px] font-black hidden lg:block">LOCAL SOURCE</span>
+            <span className="text-[10px] font-black hidden lg:block">STREAM SOURCE</span>
           </button>
         </div>
       </header>
