@@ -1270,16 +1270,15 @@ export default function App() {
   };
   const handlePanelDragEnd = () => { setDragSrcKey(null); setDragOverKey(null); setIsDragOver(false); };
 
-  // WebSocket — popup img도 동시 업데이트
+  // WebSocket — popup img도 동시 업데이트 (백엔드 reload 등으로 끊기면 자동 재연결)
   useEffect(() => {
-    const ws = new WebSocket(DASHBOARD_WS_URL);
-    ws.onopen = () => setWsConnected(true);
-    ws.onclose = () => setWsConnected(false);
-    ws.onerror = () => setWsConnected(false);
-    ws.onmessage = (event) => {
+    let cancelled = false;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const handleMessage = (event: MessageEvent) => {
       try {
         const batch = JSON.parse(event.data as string);
-        // 쳤리스트 동적 업데이트
         if (batch.type === 'camera_list') {
           setOnlineCameraIds(batch.cameras as string[]);
           return;
@@ -1304,7 +1303,31 @@ export default function App() {
         }
       } catch { /* ignore */ }
     };
-    return () => ws.close();
+
+    const connect = () => {
+      if (cancelled) return;
+      ws = new WebSocket(DASHBOARD_WS_URL);
+      ws.onopen = () => setWsConnected(true);
+      ws.onmessage = handleMessage;
+      ws.onclose = () => {
+        setWsConnected(false);
+        if (cancelled) return;
+        reconnectTimer = setTimeout(connect, 1500);
+      };
+      ws.onerror = () => { ws?.close(); };
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (ws) {
+        ws.onclose = null;
+        ws.onerror = null;
+        ws.close();
+      }
+    };
   }, [updateLiveData, addImageLog]);
 
   // 서버에서 온라인으로 알림이 온 카메라만 사이드바에 표시
