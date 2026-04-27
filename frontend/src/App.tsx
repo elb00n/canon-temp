@@ -972,7 +972,22 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
   const updateLiveData = useAppStore((state) => state.updateLiveData);
 
   const [connectionState, setConnectionState] = useState<StreamConnectionState>('idle');
-  const [cameraId, setCameraId] = useState('CAM_WS');
+  const [cameraId, setCameraId] = useState(() => {
+    // 같은 휴대폰은 같은 cameraId를 유지하고, 다른 휴대폰은 다른 ID를 갖도록.
+    // 기본값을 'CAM_WS' 한 가지로 고정해두면 두 대 이상이 동시 송출할 때 backend에서
+    // 같은 카메라로 합쳐져 한쪽이 화면에서 사라짐.
+    try {
+      const saved = localStorage.getItem('canon_camera_id');
+      if (saved) return saved;
+      const ts = Date.now().toString(36).slice(-6).toUpperCase();
+      const rand = Math.random().toString(36).slice(2, 5).toUpperCase();
+      const fresh = `CAM_${ts}${rand}`;
+      localStorage.setItem('canon_camera_id', fresh);
+      return fresh;
+    } catch {
+      return `CAM_${Date.now().toString(36).slice(-6).toUpperCase()}`;
+    }
+  });
   const [modelMode, setModelMode] = useState<StreamModelMode>('real');
   const [scenario, setScenario] = useState('normal_target2_accept');
   const [targetOrder, setTargetOrder] = useState('Target1,Target2,Target3,Target4');
