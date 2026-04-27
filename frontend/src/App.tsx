@@ -35,6 +35,22 @@ function parseTargetOrder(value: string) {
   return value.split(',').map(item => item.trim()).filter(Boolean);
 }
 
+// backend가 영문으로 넘기는 system_message를 사용자 친화적 한국어로 매핑.
+// 알 수 없는 메시지는 그대로 보여 디버깅 가능하게 둠.
+function localizeSystemMessage(msg: string | undefined | null): string {
+  if (!msg) return '';
+  const upper = msg.toUpperCase();
+  if (upper === 'AMBIGUOUS') return '판정 모호';
+  if (upper === 'REINSPECT') return '재검사 필요';
+  if (upper === 'UNKNOWN') return '미인식';
+  if (upper === 'SEQUENCE_COMPLETE') return '검사 완료';
+  if (upper === 'SEQUENCE_BLOCKED') return '순서 오류';
+  if (upper === 'WAITING...') return '대기 중...';
+  if (upper === 'BACKEND ERROR') return '백엔드 오류';
+  if (msg.endsWith(' OK')) return `${msg.slice(0, -3)} 확인됨`;
+  return msg;
+}
+
 // ─── UI 생동감 표시기 ─────────────────────────────────────────────────────────
 function LivenessIndicator() {
   const speeds = [0.7, 0.45, 0.9, 0.55, 1.0, 0.4, 0.75];
@@ -89,7 +105,7 @@ function ImagePanel({
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center opacity-40">
               <ImageIcon size={isSplit ? 28 : 48} className="text-[#64748b] mb-2" />
-              <span className="font-mono text-[#64748b] text-sm">NO IMAGE</span>
+              <span className="font-mono text-[#64748b] text-sm">이미지 없음</span>
             </div>
           )}
         </div>
@@ -186,7 +202,7 @@ function CameraPanel({
         {latestData?.inference && (
           <div className="absolute bottom-3 inset-x-0 w-full flex justify-center z-10 pointer-events-none">
             <div className={`px-4 py-1 border text-sm font-black uppercase tracking-widest bg-[#ffffff]/90 ${latestData.logic && (latestData.logic as Record<string, unknown>).allowed_transition === false ? 'text-[#CC0000] border-[#CC0000]' : 'text-[#16a34a] border-[#d9e1ec]'}`}>
-              {(latestData.display as Record<string, string> | undefined)?.system_message || 'ANALYZING...'}
+              {localizeSystemMessage((latestData.display as Record<string, string> | undefined)?.system_message) || '분석 중...'}
             </div>
           </div>
         )}
@@ -257,7 +273,7 @@ function DetailModal({
       alert(`[${item.id}] 데이터 변경 완료!`);
     } catch (err) {
       console.error(err);
-      alert("Override 저장 실패");
+      alert("데이터 변경 요청 실패. 잠시 후 다시 시도해주세요.");
     } finally {
       setLoading(false);
     }
@@ -329,7 +345,7 @@ function DetailModal({
               ) : (
                 <div className="flex flex-col items-center justify-center opacity-30">
                   <ImageIcon size={80} className="text-[#64748b] mb-4" />
-                  <span className="font-mono text-[#64748b]">NO IMAGE</span>
+                  <span className="font-mono text-[#64748b]">이미지 없음</span>
                 </div>
               )
             )}
@@ -342,7 +358,7 @@ function DetailModal({
             {(rawData as CameraData)?.display && ((rawData as CameraData).display as Record<string,string>)?.system_message && (
               <div className="absolute bottom-4 inset-x-0 flex justify-center z-10 pointer-events-none">
                 <div className={`px-8 py-2 border text-2xl font-black uppercase tracking-widest bg-[#ffffff]/90 ${((rawData as CameraData).logic as Record<string,unknown>)?.allowed_transition === false ? 'text-[#CC0000] border-[#CC0000]' : 'text-[#16a34a] border-[#d9e1ec]'}`}>
-                  {((rawData as CameraData).display as Record<string,string>).system_message}
+                  {localizeSystemMessage(((rawData as CameraData).display as Record<string,string>).system_message)}
                 </div>
               </div>
             )}
@@ -633,7 +649,7 @@ function TestModeModal() {
           })
           .catch((err) => {
             console.error(err);
-            setImageAnalysisError(String(err?.message ?? err));
+            setImageAnalysisError('이미지 분석 요청에 실패했습니다. 잠시 후 다시 시도해주세요.');
           });
       }
     } finally {
@@ -1001,7 +1017,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
         }
       } catch (err) {
         console.error('Camera access failed:', err);
-        alert('Camera permission is required.');
+        alert('카메라 권한이 필요합니다. 브라우저 설정에서 카메라 사용을 허용해주세요.');
       }
     }
     startCamera();
@@ -1266,7 +1282,7 @@ function VideoAnalysisModal() {
         }
       } catch { /* ignore */ }
     };
-    ws.onerror = () => finishVideoAnalysis('source ws error');
+    ws.onerror = () => finishVideoAnalysis('실시간 분석 연결이 끊어졌습니다. 영상을 다시 올려주세요.');
     ws.onclose = () => { wsRef.current = null; };
 
     return () => {
