@@ -73,7 +73,7 @@ class SequenceDefaults:
 	sample_fps: float = 6.0
 	timeout_seconds: float = 30.0
 	input_size: int = 640
-	device: str = "cpu"
+	device: str = "cuda"
 	openvino_device: str = "CPU"
 
 
@@ -83,7 +83,7 @@ class OperationalDefaults:
 	TARGET2_THRESHOLD: float = 0.75
 	TARGET3_THRESHOLD: float = 0.90
 	TARGET4_THRESHOLD: float = 0.90
-	DECISION_MARGIN: float = 0.08
+	DECISION_MARGIN: float = 0.005
 	DELTA_ACCEPT: float = 0.05
 	REINSPECT_WINDOW: int = 3
 	DETECTOR_CONFIDENCE_THRESHOLD: float = 0.50

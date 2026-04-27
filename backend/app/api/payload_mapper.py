@@ -105,6 +105,8 @@ def operational_result_to_frontend_payload(
 			"predicted_label": response.get("predicted_label", "unknown"),
 			"final_label": response.get("final_label", "unknown"),
 			"effective_label": response.get("effective_label", "unknown"),
+			"expected_label": state.get("expected_label"),
+			"completed_labels": list(state.get("completed_labels") or []),
 			"confirmed_state": confirmed_state,
 			"allowed_transition": allowed_transition,
 			"current_step_index": current_step_index,

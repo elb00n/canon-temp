@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import sqlite3
 from pathlib import Path
 from typing import Any, Literal
@@ -32,6 +33,7 @@ from db.database import (
 )
 
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
 initialize(DB_PATH)
 
@@ -226,6 +228,22 @@ async def inspect_image(
 				)
 				response = result.response_dict()
 				response["db_path"] = str(service.config.db_path)
+				if response.get("ambiguous") or response.get("reinspect_needed") or response.get("unknown"):
+					decision = response.get("decision") or {}
+					logger.info(
+						"[upload %s] decision=%s pred=%s top1=%s/%s top2=%s/%s margin=%s scores=%s thresholds=%s reason=%s",
+						filename,
+						response.get("decision_type"),
+						response.get("predicted_label"),
+						decision.get("top1_label"),
+						decision.get("top1_score"),
+						decision.get("top2_label"),
+						decision.get("top2_score"),
+						decision.get("margin"),
+						response.get("scores"),
+						response.get("thresholds"),
+						decision.get("reason"),
+					)
 				results.append(
 					{
 						**operational_response_to_log(

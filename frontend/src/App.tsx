@@ -15,7 +15,11 @@ export type ViewItem = { type: 'camera'; id: string } | { type: 'image'; id: str
 type StreamModelMode = 'real' | 'mock';
 type StreamConnectionState = 'idle' | 'connecting' | 'streaming' | 'error';
 
-const DASHBOARD_WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
+const DASHBOARD_WS_URL = import.meta.env.VITE_WS_URL || (
+  typeof window !== 'undefined'
+    ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
+    : 'ws://localhost:8080/ws'
+);
 
 function buildSourceWsUrl(cameraId: string, modelMode: StreamModelMode, scenario: string) {
   const base = DASHBOARD_WS_URL.replace(/\/$/, '');
@@ -242,7 +246,7 @@ function DetailModal({
     if (item.type !== 'camera' || !isAuthorized) return;
     setLoading(true);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/override`, {
+      await axios.post(`/api/override`, {
         cam_id: item.id,
         predicted_label: editLabel,
         confidence: confidence,
@@ -264,14 +268,19 @@ function DetailModal({
     const ld = rawData as CameraData;
     if (ld?.logic) {
       const logic = ld.logic as Record<string, unknown>;
-      const idx = ((logic.current_step_index as number) ?? 1) - 1;
-      const state = (logic.confirmed_state as string) ?? '';
+      const completed = (logic.completed_labels as string[] | undefined) ?? [];
+      const expected = (logic.expected_label as string | null | undefined) ?? null;
+      const effective = (logic.effective_label as string | null | undefined) ?? null;
+      const allowed = logic.allowed_transition as boolean | undefined;
+      const targets = ['Target1', 'Target2', 'Target3', 'Target4'];
       for (let i = 0; i < 4; i++) {
-        if (i < idx) s[i] = 'success';
-        else if (i === idx) {
-          if (state.includes('Complete') || state.includes('Success')) s[i] = 'success';
-          else if (logic.allowed_transition === false) s[i] = 'error';
-          else s[i] = 'processing';
+        const t = targets[i];
+        if (completed.includes(t)) {
+          s[i] = 'success';
+        } else if (t === expected) {
+          if (effective === expected) s[i] = 'processing';
+          else if (allowed === false && effective && effective !== 'unknown') s[i] = 'error';
+          else s[i] = 'idle';
         }
       }
     }
@@ -532,9 +541,10 @@ function TestModeModal() {
     setLoading(true);
     const currentOffset = isNew ? 0 : offset;
     try {
-      const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/inspection-logs?offset=${currentOffset}&limit=${LIMIT}`);
+      const resp = await fetch(`/api/inspection-logs?offset=${currentOffset}&limit=${LIMIT}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      
+
       if (Array.isArray(data)) {
         if (isNew) {
           setDbLogs(data);
@@ -557,40 +567,48 @@ function TestModeModal() {
     if (!e.target.files || e.target.files.length === 0) return;
     const formData = new FormData();
     Array.from(e.target.files).forEach(f => formData.append("files", f));
-    
+
     setLoading(true);
+    let inspectionsCount: number | null = null;
     try {
-      const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/inspect-image`, {
+      const resp = await fetch(`/api/inspect-image`, {
         method: "POST",
         body: formData
       });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      alert(`${data.inspections?.length || 0}개의 파일 가상 재검사 완료!`);
-      fetchLogs(true);
+      inspectionsCount = data.inspections?.length ?? 0;
     } catch (err) {
       console.error(err);
       alert("검사 요청 실패");
-      setLoading(false);
     } finally {
+      setLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+    if (inspectionsCount !== null) {
+      alert(`${inspectionsCount}개의 파일 가상 재검사 완료!`);
+      fetchLogs(true);
     }
   };
 
   const handleReinspect = async (logId: number) => {
     setLoading(true);
+    let success = false;
     try {
-      const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/reinspect-log/${logId}`, {
+      const resp = await fetch(`/api/reinspect-log/${logId}`, {
         method: "POST"
       });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      if(data.status === "success") {
-        alert(`${t.reinspect} 완료!`);
-        fetchLogs(true);
-      }
+      success = data.status === "success";
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+    if (success) {
+      alert(`${t.reinspect} 완료!`);
+      fetchLogs(true);
     }
   };
 
@@ -909,7 +927,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
   const [modelMode, setModelMode] = useState<StreamModelMode>('real');
   const [scenario, setScenario] = useState('normal_target2_accept');
   const [targetOrder, setTargetOrder] = useState('Target1,Target2,Target3,Target4');
-  const [sampleMs, setSampleMs] = useState(350);
+  const [sampleMs, setSampleMs] = useState(100);
   const [frameWidth, setFrameWidth] = useState(1280);
   const [jpegQuality, setJpegQuality] = useState(0.9);
   const [saveArtifacts, setSaveArtifacts] = useState(false);
@@ -1007,7 +1025,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
     ws.onopen = () => {
       setConnectionState('streaming');
       sendFrame(ws);
-      intervalRef.current = window.setInterval(() => sendFrame(ws), Math.max(150, sampleMs));
+      intervalRef.current = window.setInterval(() => sendFrame(ws), Math.max(50, sampleMs));
     };
 
     ws.onmessage = (event) => {
@@ -1102,7 +1120,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1">
               <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Sample ms</span>
-              <input type="number" min={150} max={2000} step={50} disabled={streaming} value={sampleMs} onChange={(e) => setSampleMs(Number(e.target.value) || 350)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
+              <input type="number" min={50} max={2000} step={50} disabled={streaming} value={sampleMs} onChange={(e) => setSampleMs(Number(e.target.value) || 100)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
             </label>
             <label className="block space-y-1">
               <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Width</span>
@@ -1278,16 +1296,15 @@ export default function App() {
   };
   const handlePanelDragEnd = () => { setDragSrcKey(null); setDragOverKey(null); setIsDragOver(false); };
 
-  // WebSocket — popup img도 동시 업데이트
+  // WebSocket — popup img도 동시 업데이트 (백엔드 reload 등으로 끊기면 자동 재연결)
   useEffect(() => {
-    const ws = new WebSocket(DASHBOARD_WS_URL);
-    ws.onopen = () => setWsConnected(true);
-    ws.onclose = () => setWsConnected(false);
-    ws.onerror = () => setWsConnected(false);
-    ws.onmessage = (event) => {
+    let cancelled = false;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const handleMessage = (event: MessageEvent) => {
       try {
         const batch = JSON.parse(event.data as string);
-        // 쳤리스트 동적 업데이트
         if (batch.type === 'camera_list') {
           setOnlineCameraIds(batch.cameras as string[]);
           return;
@@ -1312,7 +1329,31 @@ export default function App() {
         }
       } catch { /* ignore */ }
     };
-    return () => ws.close();
+
+    const connect = () => {
+      if (cancelled) return;
+      ws = new WebSocket(DASHBOARD_WS_URL);
+      ws.onopen = () => setWsConnected(true);
+      ws.onmessage = handleMessage;
+      ws.onclose = () => {
+        setWsConnected(false);
+        if (cancelled) return;
+        reconnectTimer = setTimeout(connect, 1500);
+      };
+      ws.onerror = () => { ws?.close(); };
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (ws) {
+        ws.onclose = null;
+        ws.onerror = null;
+        ws.close();
+      }
+    };
   }, [updateLiveData, addImageLog]);
 
   // 서버에서 온라인으로 알림이 온 카메라만 사이드바에 표시
@@ -1329,14 +1370,19 @@ export default function App() {
     const steps: StepStatus[] = ['idle', 'idle', 'idle', 'idle'];
     if (!camData?.logic) return steps;
     const logic = camData.logic as Record<string, unknown>;
-    const idx = ((logic.current_step_index as number) ?? 1) - 1;
-    const state = (logic.confirmed_state as string) ?? '';
+    const completed = (logic.completed_labels as string[] | undefined) ?? [];
+    const expected = (logic.expected_label as string | null | undefined) ?? null;
+    const effective = (logic.effective_label as string | null | undefined) ?? null;
+    const allowed = logic.allowed_transition as boolean | undefined;
+    const targets = ['Target1', 'Target2', 'Target3', 'Target4'];
     for (let i = 0; i < 4; i++) {
-      if (i < idx) steps[i] = 'success';
-      else if (i === idx) {
-        if (state.includes("Complete") || state.includes("Success")) steps[i] = 'success';
-        else if (logic.allowed_transition === false) steps[i] = 'error';
-        else steps[i] = 'processing';
+      const t = targets[i];
+      if (completed.includes(t)) {
+        steps[i] = 'success';
+      } else if (t === expected) {
+        if (effective === expected) steps[i] = 'processing';
+        else if (allowed === false && effective && effective !== 'unknown') steps[i] = 'error';
+        else steps[i] = 'idle';
       }
     }
     return steps;

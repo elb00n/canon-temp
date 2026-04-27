@@ -30,7 +30,7 @@ def get_operational_service(model_mode: str | None = "real") -> OperationalInfer
 	mode = normalize_model_mode(model_mode)
 	if mode not in _SERVICES:
 		_SERVICES[mode] = OperationalInferenceService(
-			OperationalPipelineConfig(model_mode=mode),
+			OperationalPipelineConfig(model_mode=mode, prefer_openvino=False),
 		)
 	return _SERVICES[mode]
 
