@@ -7,7 +7,7 @@ import {
   Lock
 } from "lucide-react";
 import { useAppStore } from "./store";
-import type { ImageLog, CameraData } from "./store";
+import type { ImageLog, CameraData, VideoFrameResult } from "./store";
 import { locales } from "./locales";
 
 export type StepStatus = 'idle' | 'processing' | 'success' | 'error';
@@ -524,8 +524,13 @@ function DetailModal({
 }
 
 // ── 테스트 모드 모달 (DB 데이터 조회) ──────────────────────────────────────────
+const VIDEO_EXTS = /\.(mp4|webm|mov|avi|mkv|m4v|wmv|flv|ts|ogv)$/i;
+
 function TestModeModal() {
-  const { isTestModeOpen, setTestModeOpen, dbLogs, setDbLogs, language } = useAppStore();
+  const {
+    isTestModeOpen, setTestModeOpen, dbLogs, setDbLogs, language,
+    startVideoAnalysis,
+  } = useAppStore();
   const t = locales[language];
   const [loading, setLoading] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -563,31 +568,55 @@ function TestModeModal() {
     }
   };
 
+  const startStreamingVideo = (videoFile: File) => {
+    const jobId = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID().replace(/-/g, '')
+      : `${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}`;
+    const cameraId = `VIDEO_${jobId.slice(0, 12)}`;
+    const videoUrl = URL.createObjectURL(videoFile);
+    startVideoAnalysis({ jobId, cameraId, filename: videoFile.name, videoUrl });
+    setTestModeOpen(false);
+  };
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
-    const formData = new FormData();
-    Array.from(e.target.files).forEach(f => formData.append("files", f));
+    const files = Array.from(e.target.files);
+    const videos = files.filter(f => VIDEO_EXTS.test(f.name) || f.type.startsWith('video/'));
+    const images = files.filter(f => !videos.includes(f));
 
-    setLoading(true);
-    let inspectionsCount: number | null = null;
     try {
-      const resp = await fetch(`/api/inspect-image`, {
-        method: "POST",
-        body: formData
-      });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const data = await resp.json();
-      inspectionsCount = data.inspections?.length ?? 0;
-    } catch (err) {
-      console.error(err);
-      alert("검사 요청 실패");
+      // 영상은 한 번에 하나만 (분석 뷰가 단일 슬롯)
+      if (videos.length > 0) {
+        if (videos.length > 1) {
+          alert('영상은 한 번에 한 개만 분석됩니다. 첫 번째 영상으로 진행합니다.');
+        }
+        startStreamingVideo(videos[0]);
+      }
+
+      // 이미지는 기존 흐름 (모든 이미지를 한 번에 batch 처리)
+      if (images.length > 0) {
+        const fd = new FormData();
+        images.forEach(f => fd.append('files', f));
+        setLoading(true);
+        let inspectionsCount: number | null = null;
+        try {
+          const resp = await fetch('/api/inspect-image', { method: 'POST', body: fd });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const data = await resp.json();
+          inspectionsCount = data.inspections?.length ?? 0;
+        } catch (err) {
+          console.error(err);
+          alert('이미지 검사 요청 실패');
+        } finally {
+          setLoading(false);
+        }
+        if (inspectionsCount !== null) {
+          alert(`${inspectionsCount}개의 이미지 검사 완료!`);
+          fetchLogs(true);
+        }
+      }
     } finally {
-      setLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-    if (inspectionsCount !== null) {
-      alert(`${inspectionsCount}개의 파일 가상 재검사 완료!`);
-      fetchLogs(true);
     }
   };
 
@@ -1164,10 +1193,277 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
 }
 
 
+// ─── 영상 분석 뷰 ──────────────────────────────────────────────────────────
+const VIDEO_TARGETS = ['Target1', 'Target2', 'Target3', 'Target4'];
+
+function VideoAnalysisModal() {
+  const { videoAnalysis, clearVideoAnalysis, appendVideoFrameForCamera, finishVideoAnalysis } = useAppStore();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sentRef = useRef(0);
+  const receivedRef = useRef(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [sampleMs, setSampleMs] = useState(200);
+  const [received, setReceived] = useState(0);
+
+  const cameraId = videoAnalysis?.cameraId ?? '';
+
+  // ws connection (source) — cameraId가 바뀔 때만 재연결.
+  // dep에 videoAnalysis 객체를 넣으면 매 frame 추가(set 호출)마다 새 ref가 되어
+  // ws가 close→reconnect를 반복하게 되고, 그때마다 backend가 sequence state를
+  // reset해서 3-프레임 누적이 시작 단계에 갇힘 — 절대 dep에 넣으면 안 됨.
+  useEffect(() => {
+    if (!cameraId) return;
+    const wsBase = (typeof window !== 'undefined'
+      ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
+      : 'ws://localhost:8080/ws');
+    const url = new URL(`${wsBase}/source`);
+    url.searchParams.set('cameraId', cameraId);
+    url.searchParams.set('model_mode', 'real');
+    url.searchParams.set('scenario', 'normal_target2_accept');
+    url.searchParams.set('strict_sequence', 'true');
+
+    const ws = new WebSocket(url.toString());
+    wsRef.current = ws;
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data as string);
+        if (msg.type === 'inference' && msg.cameraId === cameraId && msg.payload) {
+          const tNow = videoRef.current?.currentTime ?? 0;
+          const idx = receivedRef.current;
+          receivedRef.current = idx + 1;
+          appendVideoFrameForCamera(cameraId, {
+            frameIndex: idx,
+            timeSec: tNow,
+            payload: msg.payload as CameraData,
+          });
+          setReceived(idx + 1);
+        }
+      } catch { /* ignore */ }
+    };
+    ws.onerror = () => finishVideoAnalysis('source ws error');
+    ws.onclose = () => { wsRef.current = null; };
+
+    return () => {
+      ws.onmessage = null;
+      ws.onerror = null;
+      ws.onclose = null;
+      ws.close();
+      wsRef.current = null;
+    };
+  }, [cameraId, appendVideoFrameForCamera, finishVideoAnalysis]);
+
+  // canvas sampler — sampleMs/cameraId가 바뀔 때만 interval 재설정.
+  useEffect(() => {
+    if (!cameraId) return;
+    const tick = () => {
+      const ws = wsRef.current;
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN || !video || !canvas) return;
+      if (video.paused || video.ended || video.readyState < 2) return;
+      const w = video.videoWidth;
+      const h = video.videoHeight;
+      if (!w || !h) return;
+      const targetW = Math.min(1280, w);
+      const targetH = Math.round(targetW * (h / w));
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, targetW, targetH);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      sentRef.current += 1;
+      ws.send(JSON.stringify({
+        cameraId,
+        frame: dataUrl,
+        model_mode: 'real',
+        scenario: 'normal_target2_accept',
+        strict_sequence: true,
+        target_order: ['Target1', 'Target2', 'Target3', 'Target4'],
+        reset_state: sentRef.current === 1,
+      }));
+    };
+    intervalRef.current = setInterval(tick, Math.max(50, sampleMs));
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    };
+  }, [cameraId, sampleMs]);
+
+  if (!videoAnalysis) return null;
+  const { filename, videoUrl, frames, status, error } = videoAnalysis;
+
+  // currentTime에 가장 가까운 frame 찾기 (frames는 도착 순이라 별도 sort 필요 없음).
+  // tolerance는 sampling 간격을 덮을 정도로 넉넉히 — 그래야 video 재생과 ws 응답 도착의
+  // 작은 latency로 인해 강조 칸이 한 칸 뒤로 밀리는 깜빡임이 안 생김.
+  const tolerance = Math.max(0.3, sampleMs / 1000);
+  let currentFrame: VideoFrameResult | null = null;
+  for (const f of frames) {
+    if (f.timeSec <= currentTime + tolerance) currentFrame = f;
+  }
+
+  const logic = (currentFrame?.payload?.logic ?? {}) as Record<string, unknown>;
+  const completed = (logic.completed_labels as string[] | undefined) ?? [];
+  const expected = (logic.expected_label as string | null | undefined) ?? null;
+  const effective = (logic.effective_label as string | null | undefined) ?? null;
+  const allowedAtCurrent = logic.allowed_transition as boolean | undefined;
+
+  const stepStatuses: StepStatus[] = VIDEO_TARGETS.map(target => {
+    if (completed.includes(target)) return 'success';
+    if (target === expected) {
+      if (effective === target) return 'processing';
+      if (allowedAtCurrent === false && effective && effective !== 'unknown') return 'error';
+    }
+    return 'idle';
+  });
+
+  const handleSeek = (timeSec: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = timeSec;
+      setCurrentTime(timeSec);
+    }
+  };
+
+  const handlePlaybackRate = (rate: number) => {
+    setPlaybackRate(rate);
+    if (videoRef.current) videoRef.current.playbackRate = rate;
+  };
+
+  const statusLabel = (() => {
+    if (status === 'streaming') return `스트리밍 중 (보낸 ${sentRef.current} / 받은 ${received})`;
+    if (status === 'done') return `완료 (${frames.length} frames)`;
+    if (status === 'error') return `에러: ${error ?? ''}`;
+    return '';
+  })();
+
+  return (
+    <div className="fixed inset-0 bg-black/85 z-[160] flex items-center justify-center p-3">
+      <div className="bg-[#18181b] border-2 border-[#3b82f6] w-[96vw] h-[94vh] flex flex-col shadow-[0_0_50px_rgba(59,130,246,0.2)]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#3f3f46] bg-[#27272a]">
+          <div className="flex items-center gap-3">
+            <div className="bg-[#3b82f6]/10 p-2 border border-[#3b82f6]/30">
+              <Video size={20} className="text-[#3b82f6]" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-zinc-100 tracking-tighter uppercase leading-none">VIDEO ANALYSIS</h2>
+              <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest mt-1 truncate max-w-[60vw]">{filename}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-xs font-mono text-zinc-300">{statusLabel}</div>
+            <button
+              onClick={clearVideoAnalysis}
+              className="p-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-zinc-300 hover:text-white"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex flex-col items-center justify-center bg-black p-3 min-w-0 gap-3">
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              controls
+              autoPlay
+              onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+              onLoadedMetadata={(e) => { e.currentTarget.playbackRate = playbackRate; }}
+              className="max-w-full max-h-full"
+            />
+            <canvas ref={canvasRef} className="hidden" />
+            <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-400">
+              <span>SPEED</span>
+              {[1, 2, 4, 8].map((r) => (
+                <button
+                  key={r}
+                  onClick={() => handlePlaybackRate(r)}
+                  className={`px-2 py-1 border ${playbackRate === r ? 'bg-[#3b82f6] border-[#3b82f6] text-white' : 'border-zinc-700 text-zinc-400 hover:border-zinc-500'}`}
+                >×{r}</button>
+              ))}
+              <span className="ml-3">SAMPLE</span>
+              <input
+                type="number" min={50} max={1000} step={50} value={sampleMs}
+                onChange={(e) => setSampleMs(Number(e.target.value) || 200)}
+                className="w-16 bg-[#18181b] border border-zinc-700 px-1 py-1 text-zinc-200"
+              />
+              <span>ms</span>
+            </div>
+          </div>
+
+          <div className="w-[380px] flex-shrink-0 border-l border-[#3f3f46] flex flex-col bg-[#18181b]">
+            <div className="p-4 border-b border-[#3f3f46]">
+              <h3 className="text-[10px] font-black text-zinc-500 tracking-widest uppercase mb-3">SEQUENCE STATE</h3>
+              <div className="grid grid-cols-4 gap-2">
+                {VIDEO_TARGETS.map((target, i) => {
+                  const st = stepStatuses[i];
+                  const colors =
+                    st === 'success' ? 'bg-[#22c55e] text-white border-[#22c55e]' :
+                    st === 'processing' ? 'bg-[#3b82f6] text-white border-[#3b82f6] animate-pulse' :
+                    st === 'error' ? 'bg-[#E50012] text-white border-[#E50012]' :
+                    'bg-[#27272a] text-zinc-500 border-zinc-700';
+                  return (
+                    <div key={target} className={`px-1 py-3 text-center font-black border-2 ${colors}`}>
+                      <div className="text-xs">{target.replace('Target', 'T')}</div>
+                      <div className="text-[8px] font-mono mt-1 opacity-90">
+                        {st === 'success' ? 'OK' : st === 'processing' ? 'PROC' : st === 'error' ? 'BLK' : '·'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] font-mono">
+                <div><span className="text-zinc-500">PRED</span> <span className="text-zinc-300">{String(currentFrame?.payload?.predicted_label ?? '-')}</span></div>
+                <div><span className="text-zinc-500">FINAL</span> <span className="text-zinc-300">{String(currentFrame?.payload?.final_label ?? '-')}</span></div>
+                <div><span className="text-zinc-500">EXPECT</span> <span className="text-zinc-300">{String(expected ?? '-')}</span></div>
+                <div><span className="text-zinc-500">CONF</span> <span className="text-zinc-300">{(Number(currentFrame?.payload?.confidence ?? 0) * 100).toFixed(0)}%</span></div>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto">
+              <div className="text-[10px] font-black text-zinc-500 tracking-widest uppercase px-4 py-2 sticky top-0 bg-[#18181b] border-b border-[#3f3f46]">
+                ANALYZED FRAMES ({frames.length})
+              </div>
+              {frames.length === 0 && (
+                <div className="p-4 text-xs text-zinc-500 text-center">분석 시작 직후입니다. 잠시 후 첫 프레임이 표시됩니다.</div>
+              )}
+              {[...frames].reverse().map((f, i) => {
+                const isCurrent = currentFrame === f;
+                const fLogic = (f.payload?.logic ?? {}) as Record<string, unknown>;
+                const eventType = String(fLogic.state_event_type ?? '-');
+                const finalLabel = String(f.payload?.final_label ?? '-');
+                const allowed = fLogic.allowed_transition as boolean | undefined;
+                const isAnomaly = allowed === false || finalLabel === 'sequence_blocked' || finalLabel === 'unknown';
+                return (
+                  <button
+                    key={i}
+                    onClick={() => handleSeek(f.timeSec)}
+                    className={`w-full px-4 py-2 flex items-center gap-2 text-left border-b border-[#27272a] hover:bg-[#27272a] transition-colors ${isCurrent ? 'bg-[#3b82f6]/15 border-l-2 border-l-[#3b82f6]' : ''}`}
+                  >
+                    <span className="font-mono text-[10px] text-zinc-500 w-12 tabular-nums">{f.timeSec.toFixed(2)}s</span>
+                    <span className={`font-mono text-xs flex-1 truncate ${isAnomaly ? 'text-amber-400' : 'text-zinc-300'}`}>{finalLabel}</span>
+                    <span className="font-mono text-[9px] text-zinc-500 uppercase">{eventType.replace(/_/g, ' ')}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function App() {
-  const { 
-    language, setSettingsOpen, liveData, updateLiveData, imageLogs, 
-    addImageLog, setAdminOpen, isAdminAuth, isDevAuth 
+  const {
+    language, setSettingsOpen, liveData, updateLiveData, imageLogs,
+    addImageLog, setAdminOpen, isAdminAuth, isDevAuth,
   } = useAppStore();
   const t = locales[language];
   const [wsConnected, setWsConnected] = useState(false);
@@ -1289,25 +1585,29 @@ export default function App() {
       try {
         const batch = JSON.parse(event.data as string);
         if (batch.type === 'camera_list') {
-          setOnlineCameraIds(batch.cameras as string[]);
+          const cams = (batch.cameras as string[]).filter((id) => !id.startsWith('VIDEO_'));
+          setOnlineCameraIds(cams);
           return;
         }
         if (batch.type === 'video_frame') {
+          const camId = batch.cameraId as string;
+          if (camId?.startsWith('VIDEO_')) return; // VIDEO_*는 운영 그리드에 그리지 않음
           const src = `data:image/jpeg;base64,${batch.frame as string}`;
           ['', 'popup-'].forEach((prefix) => {
-            const el = document.getElementById(`video-stream-${prefix}${batch.cameraId as string}`) as HTMLImageElement | null;
+            const el = document.getElementById(`video-stream-${prefix}${camId}`) as HTMLImageElement | null;
             if (el) { el.src = src; el.classList.remove('hidden'); }
           });
           return;
         }
         if (batch.type === 'inference' && batch.cameraId) {
+          if ((batch.cameraId as string).startsWith('VIDEO_')) return; // modal이 직접 처리
           updateLiveData(batch.cameraId as string, batch.payload as CameraData);
           return;
         }
         if (Array.isArray(batch)) {
           (batch as Array<{ type?: string; payload?: unknown; cameraId?: string }>).forEach((item) => {
             if (item.type === 'image_log') addImageLog(item.payload as ImageLog);
-            else if (item.cameraId) updateLiveData(item.cameraId, item.payload as CameraData);
+            else if (item.cameraId && !item.cameraId.startsWith('VIDEO_')) updateLiveData(item.cameraId, item.payload as CameraData);
           });
         }
       } catch { /* ignore */ }
@@ -1397,6 +1697,7 @@ export default function App() {
       <SettingsModal />
       <AdminModal />
       <TestModeModal />
+      <VideoAnalysisModal />
       {detailItem && (
         <DetailModal
           item={detailItem}

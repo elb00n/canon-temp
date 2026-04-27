@@ -3,6 +3,22 @@ import type { Language, CameraData, ImageLog } from './types';
 
 export type { Language, CameraData, ImageLog } from './types';
 
+export interface VideoFrameResult {
+  frameIndex: number;
+  timeSec: number;
+  payload: CameraData;
+}
+
+export interface VideoAnalysis {
+  jobId: string;
+  cameraId: string;
+  filename: string;
+  videoUrl: string;
+  frames: VideoFrameResult[];
+  status: 'streaming' | 'done' | 'error';
+  error?: string;
+}
+
 interface AppState {
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -22,6 +38,11 @@ interface AppState {
   updateLiveData: (cameraId: string, data: CameraData) => void;
   imageLogs: ImageLog[];
   addImageLog: (log: ImageLog) => void;
+  videoAnalysis: VideoAnalysis | null;
+  startVideoAnalysis: (init: Omit<VideoAnalysis, 'frames' | 'status'>) => void;
+  appendVideoFrameForCamera: (cameraId: string, frame: VideoFrameResult) => void;
+  finishVideoAnalysis: (error?: string) => void;
+  clearVideoAnalysis: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -46,5 +67,31 @@ export const useAppStore = create<AppState>((set) => ({
   imageLogs: [],
   addImageLog: (log) => set((state) => ({
     imageLogs: [log, ...state.imageLogs].slice(0, 50)
-  }))
+  })),
+  videoAnalysis: null,
+  startVideoAnalysis: (init) => set(() => ({
+    videoAnalysis: { ...init, frames: [], status: 'streaming' },
+  })),
+  appendVideoFrameForCamera: (cameraId, frame) => set((state) => {
+    if (!state.videoAnalysis || state.videoAnalysis.cameraId !== cameraId) return {};
+    const current = state.videoAnalysis;
+    return {
+      videoAnalysis: {
+        ...current,
+        frames: [...current.frames, frame],
+      },
+    };
+  }),
+  finishVideoAnalysis: (error) => set((state) => {
+    if (!state.videoAnalysis) return {};
+    return {
+      videoAnalysis: { ...state.videoAnalysis, status: error ? 'error' : 'done', error },
+    };
+  }),
+  clearVideoAnalysis: () => set((state) => {
+    if (state.videoAnalysis?.videoUrl) {
+      try { URL.revokeObjectURL(state.videoAnalysis.videoUrl); } catch { /* ignore */ }
+    }
+    return { videoAnalysis: null };
+  }),
 }));
