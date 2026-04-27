@@ -63,7 +63,7 @@ function ImagePanel({
 }) {
   const { language } = useAppStore();
   const t = locales[language];
-  const sc = img.status === 'success' ? '#16a34a' : img.status === 'error' ? '#dc2626' : '#d97706';
+  const sc = img.status === 'success' ? '#16a34a' : img.status === 'error' ? '#CC0000' : '#d97706';
   return (
     <section className="flex flex-col bg-[#f8fafc] border border-[#d9e1ec] shadow-lg h-full overflow-hidden relative">
       <div className={`flex justify-between items-center bg-[#d9e1ec] px-2 border-b border-[#c5cfdd] ${isSplit ? 'py-1' : 'py-2'}`}>
@@ -107,7 +107,7 @@ function ImagePanel({
           const isTarget = s === img.target_idx;
           const style = isTarget
             ? img.status === 'success' ? 'border-[#16a34a] bg-[#16a34a]/15 text-[#16a34a]'
-            : img.status === 'error' ? 'border-[#dc2626] bg-[#dc2626]/15 text-[#dc2626]'
+            : img.status === 'error' ? 'border-[#CC0000] bg-[#CC0000]/15 text-[#CC0000]'
             : 'border-[#d97706] bg-[#d97706]/15 text-[#d97706] animate-pulse'
             : 'border-[#c5cfdd] bg-[#eef2f7]/30 text-[#94a3b8] opacity-50';
           return (
@@ -185,7 +185,7 @@ function CameraPanel({
         )}
         {latestData?.inference && (
           <div className="absolute bottom-3 inset-x-0 w-full flex justify-center z-10 pointer-events-none">
-            <div className={`px-4 py-1 border text-sm font-black uppercase tracking-widest bg-[#ffffff]/90 ${latestData.logic && (latestData.logic as Record<string, unknown>).allowed_transition === false ? 'text-[#dc2626] border-[#dc2626]' : 'text-[#16a34a] border-[#d9e1ec]'}`}>
+            <div className={`px-4 py-1 border text-sm font-black uppercase tracking-widest bg-[#ffffff]/90 ${latestData.logic && (latestData.logic as Record<string, unknown>).allowed_transition === false ? 'text-[#CC0000] border-[#CC0000]' : 'text-[#16a34a] border-[#d9e1ec]'}`}>
               {(latestData.display as Record<string, string> | undefined)?.system_message || 'ANALYZING...'}
             </div>
           </div>
@@ -199,10 +199,10 @@ function CameraPanel({
           let tc = 'text-[#94a3b8]';
           if (status === 'processing') { ss = 'border-[#d97706] bg-[#d97706]/15 animate-pulse'; tc = 'text-[#d97706]'; }
           else if (status === 'success') { ss = 'border-[#16a34a] bg-[#16a34a]/15'; tc = 'text-[#16a34a]'; }
-          else if (status === 'error') { ss = 'border-[#dc2626] bg-[#dc2626]/15'; tc = 'text-[#dc2626]'; }
+          else if (status === 'error') { ss = 'border-[#CC0000] bg-[#CC0000]/15'; tc = 'text-[#CC0000]'; }
           return (
             <div key={step.id} className={`flex-1 border flex items-center justify-between px-1.5 py-1 relative transition-all ${ss}`}>
-              {(status === 'processing' || status === 'error') && <div className={`absolute top-0 left-0 w-full h-[2px] ${status === 'error' ? 'bg-[#dc2626]' : 'bg-[#d97706]'}`} />}
+              {(status === 'processing' || status === 'error') && <div className={`absolute top-0 left-0 w-full h-[2px] ${status === 'error' ? 'bg-[#CC0000]' : 'bg-[#d97706]'}`} />}
               <span className={`text-[9px] font-bold ${tc}`}>{step.title}</span>
               {status === 'success' ? <CheckCircle2 size={10} className={tc} /> : status === 'error' ? <XCircle size={10} className={tc} /> : status === 'processing' ? <step.icon size={10} className={tc} /> : null}
             </div>
@@ -341,7 +341,7 @@ function DetailModal({
             )}
             {(rawData as CameraData)?.display && ((rawData as CameraData).display as Record<string,string>)?.system_message && (
               <div className="absolute bottom-4 inset-x-0 flex justify-center z-10 pointer-events-none">
-                <div className={`px-8 py-2 border text-2xl font-black uppercase tracking-widest bg-[#ffffff]/90 ${((rawData as CameraData).logic as Record<string,unknown>)?.allowed_transition === false ? 'text-[#dc2626] border-[#dc2626]' : 'text-[#16a34a] border-[#d9e1ec]'}`}>
+                <div className={`px-8 py-2 border text-2xl font-black uppercase tracking-widest bg-[#ffffff]/90 ${((rawData as CameraData).logic as Record<string,unknown>)?.allowed_transition === false ? 'text-[#CC0000] border-[#CC0000]' : 'text-[#16a34a] border-[#d9e1ec]'}`}>
                   {((rawData as CameraData).display as Record<string,string>).system_message}
                 </div>
               </div>
@@ -368,7 +368,7 @@ function DetailModal({
               <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   {[
-                    { label: 'Confidence', value: `${(((rawData as CameraData)?.confidence ?? 0) * 100).toFixed(1)}%`, color: '#d97706' },
+                    { label: '신뢰도', value: `${(((rawData as CameraData)?.confidence ?? 0) * 100).toFixed(1)}%`, color: '#d97706' },
                     { label: 'State', value: (rawData as CameraData)?.confirmed_state || (rawData as ImageLog)?.status || '-', color: '#16a34a' },
                     { label: 'Label', value: (rawData as CameraData)?.predicted_label || '-', color: '#64748b' },
                     { label: 'Unknown', value: (rawData as CameraData)?.is_unknown ? 'TRUE' : 'FALSE', color: (rawData as CameraData)?.is_unknown ? '#d97706' : '#c5cfdd' },
@@ -446,7 +446,7 @@ function DetailModal({
                     <div className="flex items-center justify-between">
                       <label className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest">{t.allowTransition}</label>
                       <button onClick={() => setEditLogic(p => ({ ...p, allowed_transition: !p.allowed_transition }))}
-                        className={`px-3 py-2 border font-bold text-xs transition-all ${editLogic.allowed_transition ? 'border-[#16a34a] bg-[#16a34a]/20 text-[#16a34a]' : 'border-[#dc2626] bg-[#dc2626]/20 text-[#dc2626]'}`}>
+                        className={`px-3 py-2 border font-bold text-xs transition-all ${editLogic.allowed_transition ? 'border-[#16a34a] bg-[#16a34a]/20 text-[#16a34a]' : 'border-[#CC0000] bg-[#CC0000]/20 text-[#CC0000]'}`}>
                         {editLogic.allowed_transition ? t.allowed : t.blocked}
                       </button>
                     </div>
@@ -479,7 +479,7 @@ function DetailModal({
                   <button
                     onClick={handleSaveOverride}
                     disabled={loading || item.type !== 'camera' || !isAuthorized}
-                    className={`w-full flex items-center justify-center gap-2 py-3 font-black tracking-widest text-xs transition-all shadow-lg ${isAuthorized ? 'bg-[#CC0000] hover:bg-[#E21A1A] text-white' : 'bg-[#eef2f7] text-[#94a3b8] border border-[#c5cfdd] cursor-not-allowed'}`}
+                    className={`w-full flex items-center justify-center gap-2 py-3 font-black tracking-widest text-xs transition-all shadow-lg ${isAuthorized ? 'bg-[#CC0000] hover:bg-[#CC0000] text-white' : 'bg-[#eef2f7] text-[#94a3b8] border border-[#c5cfdd] cursor-not-allowed'}`}
                   >
                     <Save size={14} className={loading ? "animate-spin" : ""} />
                     {!isAuthorized ? t.authRequired : (loading ? "SAVING..." : t.saveOverride)}
@@ -504,7 +504,7 @@ function DetailModal({
             let tc = 'text-[#94a3b8]';
             if (status === 'processing') { ss = 'bg-[#d97706]/10 border-t-2 border-[#d97706]'; tc = 'text-[#d97706]'; }
             else if (status === 'success') { ss = 'bg-[#16a34a]/10 border-t-2 border-[#16a34a]'; tc = 'text-[#16a34a]'; }
-            else if (status === 'error') { ss = 'bg-[#dc2626]/10 border-t-2 border-[#dc2626]'; tc = 'text-[#dc2626]'; }
+            else if (status === 'error') { ss = 'bg-[#CC0000]/10 border-t-2 border-[#CC0000]'; tc = 'text-[#CC0000]'; }
             return (
               <div key={n} className={`flex-1 flex items-center justify-between px-4 py-3 border-r border-[#d9e1ec] last:border-r-0 ${ss}`}>
                 <span className={`text-sm font-black tracking-wider ${tc}`}>{t.target} {n}</span>
@@ -705,7 +705,7 @@ function TestModeModal() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={loading}
-              className="flex items-center gap-2 px-6 py-3 bg-[#CC0000] hover:bg-[#E21A1A] text-white text-xs font-black transition-all disabled:opacity-50 shadow-lg border border-[#CC0000] active:scale-95"
+              className="flex items-center gap-2 px-6 py-3 bg-[#CC0000] hover:bg-[#CC0000] text-white text-xs font-black transition-all disabled:opacity-50 shadow-lg border border-[#CC0000] active:scale-95"
             >
               <ImageIcon size={16} />
               {t.localTest}
@@ -757,7 +757,7 @@ function TestModeModal() {
                   <td className="p-5 text-[#d97706] font-black text-base italic">{(log.confidence * 100).toFixed(1)}%</td>
                   <td className="p-5">
                     {log.anomaly_flag ? 
-                      <div className="flex items-center gap-2 text-red-500"><ShieldAlert size={14} className="animate-pulse" /><span className="font-black text-[10px] tracking-widest">ALARM</span></div> 
+                      <div className="flex items-center gap-2 text-red-500"><ShieldAlert size={14} className="animate-pulse" /><span className="font-black text-[10px] tracking-widest">경고</span></div> 
                       : <span className="text-[#cbd5e1] font-black text-[10px]">NORMAL</span>
                     }
                   </td>
@@ -898,7 +898,7 @@ function AdminModal() {
       >
         <div className="flex flex-col items-center mb-10 relative z-10">
           <div className="w-16 h-16 bg-[#ffffff] border border-[#d9e1ec] flex items-center justify-center rounded-2xl mb-4 shadow-sm">
-            <Lock size={32} className={`${error ? 'text-[#dc2626]' : 'text-[#64748b]'} transition-colors duration-500`} />
+            <Lock size={32} className={`${error ? 'text-[#CC0000]' : 'text-[#64748b]'} transition-colors duration-500`} />
           </div>
           <h2 className="text-xl font-black text-[#111827] tracking-[0.2em] uppercase">{t.systemAuth}</h2>
           <div className="h-0.5 w-12 bg-[#CC0000] mt-3" />
@@ -908,7 +908,7 @@ function AdminModal() {
           <div className="space-y-4">
             <div className="flex justify-between items-center px-1">
               <label className="text-[10px] font-black text-[#64748b] uppercase tracking-widest">{t.accessCode}</label>
-              {error && <span className="text-[#dc2626] text-[9px] font-bold animate-pulse">{t.invalidCode}</span>}
+              {error && <span className="text-[#CC0000] text-[9px] font-bold animate-pulse">{t.invalidCode}</span>}
             </div>
             
             <div className="relative group flex justify-center">
@@ -918,7 +918,7 @@ function AdminModal() {
                 maxLength={4}
                 value={pw}
                 onChange={(e) => { setPw(e.target.value); setError(false); }}
-                className={`w-full max-w-[310px] bg-[#ffffff] border-b-2 ${error ? 'border-[#dc2626]' : 'border-[#d9e1ec]'} focus:border-[#CC0000] transition-all text-[#111827] text-center text-2xl tracking-[0.5em] py-2 outline-none font-mono shadow-inner`}
+                className={`w-full max-w-[310px] bg-[#ffffff] border-b-2 ${error ? 'border-[#CC0000]' : 'border-[#d9e1ec]'} focus:border-[#CC0000] transition-all text-[#111827] text-center text-2xl tracking-[0.5em] py-2 outline-none font-mono shadow-inner`}
               />
             </div>
           </div>
@@ -926,7 +926,7 @@ function AdminModal() {
           <div className="space-y-3">
             <button 
               type="submit"
-              className="w-full py-4 bg-[#CC0000] hover:bg-[#E21A1A] text-white font-black tracking-[0.2em] uppercase transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 group/btn"
+              className="w-full py-4 bg-[#CC0000] hover:bg-[#CC0000] text-white font-black tracking-[0.2em] uppercase transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 group/btn"
             >
               <span>{t.login}</span>
               <ChevronRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
@@ -960,16 +960,16 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
   const [modelMode, setModelMode] = useState<StreamModelMode>('real');
   const [scenario, setScenario] = useState('normal_target2_accept');
   const [targetOrder, setTargetOrder] = useState('Target1,Target2,Target3,Target4');
-  const [sampleMs, setSampleMs] = useState(100);
+  const [sampleMs, setSampleMs] = useState(50);
   const [frameWidth, setFrameWidth] = useState(1280);
-  const [jpegQuality, setJpegQuality] = useState(0.9);
+  const [jpegQuality, setJpegQuality] = useState(0.8);
   const [saveArtifacts, setSaveArtifacts] = useState(false);
   const [stats, setStats] = useState({
     sent: 0,
     received: 0,
     predicted: '-',
     finalLabel: '-',
-    message: 'READY',
+    message: '대기',
   });
 
   const streaming = connectionState === 'streaming' || connectionState === 'connecting';
@@ -1049,7 +1049,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
   const startStreaming = () => {
     if (streaming) return;
     sentCountRef.current = 0;
-    setStats({ sent: 0, received: 0, predicted: '-', finalLabel: '-', message: 'CONNECTING' });
+    setStats({ sent: 0, received: 0, predicted: '-', finalLabel: '-', message: '연결 중' });
     setConnectionState('connecting');
 
     const ws = new WebSocket(buildSourceWsUrl(cameraId, modelMode, scenario));
@@ -1058,7 +1058,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
     ws.onopen = () => {
       setConnectionState('streaming');
       sendFrame(ws);
-      intervalRef.current = window.setInterval(() => sendFrame(ws), Math.max(50, sampleMs));
+      intervalRef.current = window.setInterval(() => sendFrame(ws), Math.max(33, sampleMs));
     };
 
     ws.onmessage = (event) => {
@@ -1075,13 +1075,13 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
           }));
         }
       } catch {
-        setStats(prev => ({ ...prev, message: 'BAD MESSAGE' }));
+        setStats(prev => ({ ...prev, message: '메시지 오류' }));
       }
     };
 
     ws.onerror = () => {
       setConnectionState('error');
-      setStats(prev => ({ ...prev, message: 'WS ERROR' }));
+      setStats(prev => ({ ...prev, message: '연결 오류' }));
     };
 
     ws.onclose = () => {
@@ -1116,7 +1116,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
           <label className="block space-y-1">
-            <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">Camera ID</span>
+            <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">카메라 ID</span>
             <input value={cameraId} disabled={streaming} onChange={(e) => setCameraId(e.target.value || 'CAM_WS')} className="w-full bg-[#ffffff] border border-[#d9e1ec] px-3 py-2 text-sm font-mono text-[#111827] outline-none focus:border-[#CC0000]" />
           </label>
 
@@ -1134,7 +1134,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
           </div>
 
           <label className="block space-y-1">
-            <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">Scenario</span>
+            <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">시나리오</span>
             <select disabled={streaming} value={scenario} onChange={(e) => setScenario(e.target.value)} className="w-full bg-[#ffffff] border border-[#d9e1ec] px-3 py-2 text-sm font-mono text-[#111827] outline-none focus:border-[#CC0000]">
               <option value="normal_target2_accept">normal_target2_accept</option>
               <option value="single_pass_accept">single_pass_accept</option>
@@ -1146,50 +1146,50 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
           </label>
 
           <label className="block space-y-1">
-            <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">Target Order</span>
+            <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">검출 순서</span>
             <input disabled={streaming} value={targetOrder} onChange={(e) => setTargetOrder(e.target.value)} className="w-full bg-[#ffffff] border border-[#d9e1ec] px-3 py-2 text-sm font-mono text-[#111827] outline-none focus:border-[#CC0000]" />
           </label>
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1">
-              <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">Sample ms</span>
-              <input type="number" min={50} max={2000} step={50} disabled={streaming} value={sampleMs} onChange={(e) => setSampleMs(Number(e.target.value) || 100)} className="w-full bg-[#ffffff] border border-[#d9e1ec] px-3 py-2 text-sm font-mono text-[#111827] outline-none focus:border-[#CC0000]" />
+              <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">샘플 간격(ms)</span>
+              <input type="number" min={33} max={2000} step={17} disabled={streaming} value={sampleMs} onChange={(e) => setSampleMs(Number(e.target.value) || 50)} className="w-full bg-[#ffffff] border border-[#d9e1ec] px-3 py-2 text-sm font-mono text-[#111827] outline-none focus:border-[#CC0000]" />
             </label>
             <label className="block space-y-1">
-              <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">Width</span>
+              <span className="text-[10px] text-[#64748b] font-black uppercase tracking-widest">해상도(px)</span>
               <input type="number" min={224} max={1920} step={64} disabled={streaming} value={frameWidth} onChange={(e) => setFrameWidth(Number(e.target.value) || 1280)} className="w-full bg-[#ffffff] border border-[#d9e1ec] px-3 py-2 text-sm font-mono text-[#111827] outline-none focus:border-[#CC0000]" />
             </label>
           </div>
 
           <label className="block space-y-2">
             <div className="flex justify-between text-[10px] text-[#64748b] font-black uppercase tracking-widest">
-              <span>JPEG Quality</span>
+              <span>JPEG 품질</span>
               <span>{Math.round(jpegQuality * 100)}%</span>
             </div>
             <input type="range" min={0.5} max={0.95} step={0.05} disabled={streaming} value={jpegQuality} onChange={(e) => setJpegQuality(Number(e.target.value))} className="w-full accent-[#CC0000]" />
           </label>
 
           <label className="flex items-center justify-between bg-[#ffffff] border border-[#d9e1ec] px-3 py-3">
-            <span className="text-xs text-[#334155] font-black uppercase tracking-widest">Save Artifacts</span>
+            <span className="text-xs text-[#334155] font-black uppercase tracking-widest">분석 결과 저장</span>
             <input type="checkbox" checked={saveArtifacts} disabled={streaming} onChange={(e) => setSaveArtifacts(e.target.checked)} className="h-4 w-4 accent-[#CC0000]" />
           </label>
         </div>
 
         <div className="p-4 border-t border-[#d9e1ec] space-y-3">
           <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-            <div className="bg-[#ffffff] border border-[#d9e1ec] p-2 text-[#64748b]">SENT <span className="float-right text-[#111827]">{stats.sent}</span></div>
-            <div className="bg-[#ffffff] border border-[#d9e1ec] p-2 text-[#64748b]">RESULT <span className="float-right text-[#111827]">{stats.received}</span></div>
+            <div className="bg-[#ffffff] border border-[#d9e1ec] p-2 text-[#64748b]">전송 <span className="float-right text-[#111827]">{stats.sent}</span></div>
+            <div className="bg-[#ffffff] border border-[#d9e1ec] p-2 text-[#64748b]">응답 <span className="float-right text-[#111827]">{stats.received}</span></div>
             <div className="bg-[#ffffff] border border-[#d9e1ec] p-2 text-[#64748b]">PRED <span className="float-right text-[#111827]">{stats.predicted}</span></div>
             <div className="bg-[#ffffff] border border-[#d9e1ec] p-2 text-[#64748b]">FINAL <span className="float-right text-[#111827]">{stats.finalLabel}</span></div>
           </div>
-          <div className={`border px-3 py-2 text-center text-xs font-black uppercase tracking-widest ${connectionState === 'error' ? 'border-[#dc2626] text-[#dc2626]' : streaming ? 'border-[#16a34a] text-[#16a34a]' : 'border-[#d9e1ec] text-[#64748b]'}`}>
+          <div className={`border px-3 py-2 text-center text-xs font-black uppercase tracking-widest ${connectionState === 'error' ? 'border-[#CC0000] text-[#CC0000]' : streaming ? 'border-[#16a34a] text-[#16a34a]' : 'border-[#d9e1ec] text-[#64748b]'}`}>
             {stats.message}
           </div>
           <button
             onClick={toggleStreaming}
             className={`w-full py-4 text-base font-black tracking-widest uppercase transition-all shadow-xl active:scale-95 ${streaming ? 'bg-[#eef2f7] text-red-500 border border-red-500/30' : 'bg-[#CC0000] text-white hover:bg-[#111827] hover:text-white'}`}
           >
-            {streaming ? 'STOP STREAM' : 'START STREAM'}
+            {streaming ? '송출 중지' : '송출 시작'}
           </button>
         </div>
       </div>
@@ -1371,7 +1371,7 @@ function VideoAnalysisModal() {
               <Video size={20} className="text-[#2563eb]" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-[#111827] tracking-tighter uppercase leading-none">VIDEO ANALYSIS</h2>
+              <h2 className="text-lg font-black text-[#111827] tracking-tighter uppercase leading-none">영상 분석</h2>
               <p className="text-[10px] text-[#64748b] font-mono uppercase tracking-widest mt-1 truncate max-w-[60vw]">{filename}</p>
             </div>
           </div>
@@ -1399,7 +1399,7 @@ function VideoAnalysisModal() {
             />
             <canvas ref={canvasRef} className="hidden" />
             <div className="flex items-center gap-2 text-[10px] font-mono text-[#64748b]">
-              <span>SPEED</span>
+              <span>재생속도</span>
               {[1, 2, 4, 8].map((r) => (
                 <button
                   key={r}
@@ -1407,7 +1407,7 @@ function VideoAnalysisModal() {
                   className={`px-2 py-1 border ${playbackRate === r ? 'bg-[#2563eb] border-[#2563eb] text-white' : 'border-[#c5cfdd] text-[#64748b] hover:border-[#cbd5e1]'}`}
                 >×{r}</button>
               ))}
-              <span className="ml-3">SAMPLE</span>
+              <span className="ml-3">샘플간격</span>
               <input
                 type="number" min={50} max={1000} step={50} value={sampleMs}
                 onChange={(e) => setSampleMs(Number(e.target.value) || 200)}
@@ -1419,7 +1419,7 @@ function VideoAnalysisModal() {
 
           <div className="w-[380px] flex-shrink-0 border-l border-[#d9e1ec] flex flex-col bg-[#ffffff]">
             <div className="p-4 border-b border-[#d9e1ec]">
-              <h3 className="text-[10px] font-black text-[#64748b] tracking-widest uppercase mb-3">SEQUENCE STATE</h3>
+              <h3 className="text-[10px] font-black text-[#64748b] tracking-widest uppercase mb-3">시퀀스 상태</h3>
               <div className="grid grid-cols-4 gap-2">
                 {VIDEO_TARGETS.map((target, i) => {
                   const st = stepStatuses[i];
@@ -1432,23 +1432,23 @@ function VideoAnalysisModal() {
                     <div key={target} className={`px-1 py-3 text-center font-black border-2 ${colors}`}>
                       <div className="text-xs">{target.replace('Target', 'T')}</div>
                       <div className="text-[8px] font-mono mt-1 opacity-90">
-                        {st === 'success' ? 'OK' : st === 'processing' ? 'PROC' : st === 'error' ? 'BLK' : '·'}
+                        {st === 'success' ? '완료' : st === 'processing' ? '진행중' : st === 'error' ? '차단' : '대기'}
                       </div>
                     </div>
                   );
                 })}
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] font-mono">
-                <div><span className="text-[#64748b]">PRED</span> <span className="text-[#334155]">{String(currentFrame?.payload?.predicted_label ?? '-')}</span></div>
-                <div><span className="text-[#64748b]">FINAL</span> <span className="text-[#334155]">{String(currentFrame?.payload?.final_label ?? '-')}</span></div>
-                <div><span className="text-[#64748b]">EXPECT</span> <span className="text-[#334155]">{String(expected ?? '-')}</span></div>
-                <div><span className="text-[#64748b]">CONF</span> <span className="text-[#334155]">{(Number(currentFrame?.payload?.confidence ?? 0) * 100).toFixed(0)}%</span></div>
+                <div><span className="text-[#64748b]">예측</span> <span className="text-[#334155]">{String(currentFrame?.payload?.predicted_label ?? '-')}</span></div>
+                <div><span className="text-[#64748b]">최종</span> <span className="text-[#334155]">{String(currentFrame?.payload?.final_label ?? '-')}</span></div>
+                <div><span className="text-[#64748b]">기대값</span> <span className="text-[#334155]">{String(expected ?? '-')}</span></div>
+                <div><span className="text-[#64748b]">신뢰도</span> <span className="text-[#334155]">{(Number(currentFrame?.payload?.confidence ?? 0) * 100).toFixed(0)}%</span></div>
               </div>
             </div>
 
             <div className="flex-1 overflow-auto">
               <div className="text-[10px] font-black text-[#64748b] tracking-widest uppercase px-4 py-2 sticky top-0 bg-[#ffffff] border-b border-[#d9e1ec]">
-                ANALYZED FRAMES ({frames.length})
+                분석된 프레임 ({frames.length})
               </div>
               {frames.length === 0 && (
                 <div className="p-4 text-xs text-[#64748b] text-center">분석 시작 직후입니다. 잠시 후 첫 프레임이 표시됩니다.</div>
@@ -1535,7 +1535,7 @@ function ImageAnalysisModal() {
               <ImageIcon size={20} className="text-[#CC0000]" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-[#111827] tracking-tighter uppercase leading-none">IMAGE ANALYSIS</h2>
+              <h2 className="text-lg font-black text-[#111827] tracking-tighter uppercase leading-none">이미지 분석</h2>
               <p className="text-[10px] text-[#64748b] font-mono uppercase tracking-widest mt-1 truncate max-w-[60vw]">
                 {item?.filename ?? '-'} · {currentIndex + 1} / {total}
               </p>
@@ -1594,7 +1594,7 @@ function ImageAnalysisModal() {
 
           <div className="w-[380px] flex-shrink-0 border-l border-[#d9e1ec] flex flex-col bg-[#ffffff] overflow-auto">
             <div className="p-4 border-b border-[#d9e1ec]">
-              <h3 className="text-[10px] font-black text-[#64748b] tracking-widest uppercase mb-3">PREDICTION</h3>
+              <h3 className="text-[10px] font-black text-[#64748b] tracking-widest uppercase mb-3">예측 결과</h3>
               {!result && !itemError && (
                 <div className="text-xs text-[#64748b] font-mono">분석 결과 대기 중...</div>
               )}
@@ -1605,28 +1605,28 @@ function ImageAnalysisModal() {
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
                     <div className="flex flex-col">
-                      <span className="text-[#64748b] uppercase tracking-widest">Predicted</span>
+                      <span className="text-[#64748b] uppercase tracking-widest">예측</span>
                       {labelChip(result.predicted_label)}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[#64748b] uppercase tracking-widest">Final</span>
+                      <span className="text-[#64748b] uppercase tracking-widest">최종</span>
                       {labelChip(result.final_label)}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[#64748b] uppercase tracking-widest">Confidence</span>
+                      <span className="text-[#64748b] uppercase tracking-widest">신뢰도</span>
                       <span className="font-mono text-sm text-[#111827] tabular-nums">{(result.confidence * 100).toFixed(1)}%</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[#64748b] uppercase tracking-widest">Decision</span>
+                      <span className="text-[#64748b] uppercase tracking-widest">판정</span>
                       <span className="font-mono text-xs text-[#334155]">{result.decision_type ?? '-'}</span>
                     </div>
                   </div>
                   {(result.is_unknown || result.ambiguous || result.reinspect_needed || result.anomaly_flag) && (
                     <div className="flex flex-wrap gap-1 pt-1">
-                      {result.is_unknown && <span className="px-2 py-0.5 text-[9px] font-black bg-[#e2e8f0] text-[#1f2937] uppercase tracking-widest">UNKNOWN</span>}
-                      {result.ambiguous && <span className="px-2 py-0.5 text-[9px] font-black bg-amber-700 text-amber-100 uppercase tracking-widest">AMBIGUOUS</span>}
-                      {result.reinspect_needed && <span className="px-2 py-0.5 text-[9px] font-black bg-yellow-700 text-yellow-100 uppercase tracking-widest">REINSPECT</span>}
-                      {result.anomaly_flag && <span className="px-2 py-0.5 text-[9px] font-black bg-[#CC0000] text-white uppercase tracking-widest">ALARM</span>}
+                      {result.is_unknown && <span className="px-2 py-0.5 text-[9px] font-black bg-[#e2e8f0] text-[#1f2937] uppercase tracking-widest">미인식</span>}
+                      {result.ambiguous && <span className="px-2 py-0.5 text-[9px] font-black bg-amber-700 text-amber-100 uppercase tracking-widest">모호</span>}
+                      {result.reinspect_needed && <span className="px-2 py-0.5 text-[9px] font-black bg-yellow-700 text-yellow-100 uppercase tracking-widest">재검사</span>}
+                      {result.anomaly_flag && <span className="px-2 py-0.5 text-[9px] font-black bg-[#CC0000] text-white uppercase tracking-widest">경고</span>}
                     </div>
                   )}
                   {result.decision_reason && (
@@ -1638,7 +1638,7 @@ function ImageAnalysisModal() {
 
             {result?.scores && (
               <div className="p-4 border-b border-[#d9e1ec]">
-                <h3 className="text-[10px] font-black text-[#64748b] tracking-widest uppercase mb-3">CLASSIFIER SCORES</h3>
+                <h3 className="text-[10px] font-black text-[#64748b] tracking-widest uppercase mb-3">분류기 점수</h3>
                 <div className="space-y-2">
                   {targets.map((t) => {
                     const score = Number(result.scores?.[t] ?? 0);
@@ -1708,7 +1708,7 @@ export default function App() {
     clickTimerRef.current = setTimeout(() => { clickCountRef.current = 0; }, 1000);
   };
 
-  // 더블탭으로 추가/제거, 싱글탭으로 단일 전환
+  // 카메라/이미지 목록: 더블탭으로 추가/제거, 싱글탭으로 단일 전환
   const lastTapRef = useRef<Record<string, number>>({});
   const tapTimerRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const handleItemTap = useCallback((item: ViewItem) => {
@@ -1798,34 +1798,39 @@ export default function App() {
     let ws: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
+    const applyVideoFrame = (cameraId: string, frame: unknown) => {
+      if (cameraId?.startsWith('VIDEO_') || typeof frame !== 'string') return;
+      const src = `data:image/jpeg;base64,${frame}`;
+      ['', 'popup-'].forEach((prefix) => {
+        const el = document.getElementById(`video-stream-${prefix}${cameraId}`) as HTMLImageElement | null;
+        if (el) { el.src = src; el.classList.remove('hidden'); }
+      });
+    };
+
     const handleMessage = (event: MessageEvent) => {
       try {
         const batch = JSON.parse(event.data as string);
+        if (Array.isArray(batch)) {
+          (batch as Array<{ type?: string; payload?: unknown; cameraId?: string; frame?: unknown }>).forEach((item) => {
+            if (item.type === 'video_frame' && item.cameraId) applyVideoFrame(item.cameraId, item.frame);
+            else if (item.type === 'image_log') addImageLog(item.payload as ImageLog);
+            else if (item.cameraId && !item.cameraId.startsWith('VIDEO_')) updateLiveData(item.cameraId, item.payload as CameraData);
+          });
+          return;
+        }
         if (batch.type === 'camera_list') {
           const cams = (batch.cameras as string[]).filter((id) => !id.startsWith('VIDEO_'));
           setOnlineCameraIds(cams);
           return;
         }
         if (batch.type === 'video_frame') {
-          const camId = batch.cameraId as string;
-          if (camId?.startsWith('VIDEO_')) return; // VIDEO_*는 운영 그리드에 그리지 않음
-          const src = `data:image/jpeg;base64,${batch.frame as string}`;
-          ['', 'popup-'].forEach((prefix) => {
-            const el = document.getElementById(`video-stream-${prefix}${camId}`) as HTMLImageElement | null;
-            if (el) { el.src = src; el.classList.remove('hidden'); }
-          });
+          applyVideoFrame(batch.cameraId as string, batch.frame);
           return;
         }
         if (batch.type === 'inference' && batch.cameraId) {
           if ((batch.cameraId as string).startsWith('VIDEO_')) return; // modal이 직접 처리
           updateLiveData(batch.cameraId as string, batch.payload as CameraData);
           return;
-        }
-        if (Array.isArray(batch)) {
-          (batch as Array<{ type?: string; payload?: unknown; cameraId?: string }>).forEach((item) => {
-            if (item.type === 'image_log') addImageLog(item.payload as ImageLog);
-            else if (item.cameraId && !item.cameraId.startsWith('VIDEO_')) updateLiveData(item.cameraId, item.payload as CameraData);
-          });
         }
       } catch { /* ignore */ }
     };
@@ -1937,20 +1942,20 @@ export default function App() {
         </div>
         <div className="flex items-center gap-6">
           {isAdminAuth && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-[#CC0000] border border-[#E21A1A] text-white font-black text-[10px] tracking-widest shadow-[0_0_10px_rgba(204,0,0,0.22)] animate-pulse">
+            <div className="flex items-center gap-2 px-3 py-1 bg-[#CC0000] border border-[#CC0000] text-white font-black text-[10px] tracking-widest shadow-[0_0_10px_rgba(204,0,0,0.22)] animate-pulse">
               <ShieldAlert size={12} />
-              ADMIN ACTIVE
+              관리자 모드
             </div>
           )}
           <div className="flex items-center gap-3">
             {wsConnected ? (
               <>
                 <span className="flex h-2.5 w-2.5 relative"><span className="animate-ping absolute inline-flex h-full w-full bg-[#16a34a] opacity-75"></span><span className="relative inline-flex h-2.5 w-2.5 bg-[#16a34a]"></span></span>
-                <span className="text-xs font-medium text-[#334155] hidden sm:block">LIVE</span>
+                <span className="text-xs font-medium text-[#334155] hidden sm:block">연결됨</span>
                 <LivenessIndicator />
               </>
             ) : (
-              <><Server size={13} className="text-[#64748b]" /><span className="text-xs text-[#64748b]">OFFLINE</span></>
+              <><Server size={13} className="text-[#64748b]" /><span className="text-xs text-[#64748b]">연결 끊김</span></>
             )}
           </div>
           <button onClick={() => setSettingsOpen(true)} className="p-2 bg-[#ffffff] hover:bg-[#d9e1ec] border border-[#d9e1ec] hover:border-[#94a3b8] text-[#334155] hover:text-[#111827] transition-colors">
@@ -1961,7 +1966,7 @@ export default function App() {
             className="p-2 bg-[#ffffff] hover:bg-[#d9e1ec] border border-[#d9e1ec] hover:border-[#94a3b8] text-[#334155] hover:text-[#111827] transition-colors flex items-center gap-2 group"
           >
             <Video size={18} className="group-hover:text-[#CC0000]" />
-            <span className="text-[10px] font-black hidden lg:block">STREAM SOURCE</span>
+            <span className="text-[10px] font-black hidden lg:block">카메라 시작</span>
           </button>
         </div>
       </header>
@@ -1985,16 +1990,9 @@ export default function App() {
                 return (
                   <div
                     key={cam.id}
-                    onClick={() => {
-                      const item: ViewItem = { type: 'camera', id: cam.id };
-                      const exists = activeItems.some(i => i.type === item.type && i.id === item.id);
-                      if (exists) {
-                        if (activeItems.length > 1) setActiveItems(activeItems.filter(i => !(i.type === item.type && i.id === item.id)));
-                      } else {
-                        setActiveItems([item]); // 싱글 클릭으로 즉시 전환
-                      }
-                    }}
+                    onClick={() => handleItemTap(item)}
                     draggable onDragStart={(e) => handleDragStart(e, item)}
+                    title="싱글 클릭: 단일 보기 / 더블 클릭: 분할 보기 추가·제거"
                     className={`px-3 py-2 border-b border-[#d9e1ec] cursor-pointer transition-all flex items-center justify-between select-none ${active ? 'bg-[#CC0000]/15 border-l-2 border-l-[#CC0000]' : 'hover:bg-[#d9e1ec]'}`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -2025,7 +2023,7 @@ export default function App() {
                 imageLogs.map((img) => {
                   const item: ViewItem = { type: 'image', id: img.id };
                   const active = isItemActive(item);
-                  const sc = img.status === 'success' ? '#16a34a' : img.status === 'error' ? '#dc2626' : '#d97706';
+                  const sc = img.status === 'success' ? '#16a34a' : img.status === 'error' ? '#CC0000' : '#d97706';
                   return (
                     <div
                       key={img.id}
