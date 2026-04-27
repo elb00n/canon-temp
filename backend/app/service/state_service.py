@@ -7,6 +7,9 @@ from dataclasses import dataclass, field
 from app.service.operational_types import DecisionResult, StateTransition, TARGET_LABELS, canonical_target_name
 
 
+REQUIRED_CONSECUTIVE_FRAMES = 3
+
+
 @dataclass(slots=True)
 class SequenceStateMachine:
 	session_id: str
@@ -14,6 +17,9 @@ class SequenceStateMachine:
 	strict_order: bool = False
 	current_index: int = 0
 	completed_labels: list[str] = field(default_factory=list)
+	required_consecutive: int = REQUIRED_CONSECUTIVE_FRAMES
+	consecutive_count: int = 0
+	restart_count: int = 0
 
 	def expected_label(self) -> str | None:
 		if self.current_index >= len(self.target_order):
@@ -23,6 +29,8 @@ class SequenceStateMachine:
 	def apply(self, decision: DecisionResult) -> StateTransition:
 		expected = self.expected_label()
 		if not decision.accepted:
+			self.consecutive_count = 0
+			self.restart_count = 0
 			return StateTransition(
 				session_id=self.session_id,
 				expected_label=expected,
@@ -53,19 +61,54 @@ class SequenceStateMachine:
 			)
 
 		if expected is None:
-			return StateTransition(
-				session_id=self.session_id,
-				expected_label=None,
-				effective_label=effective_label,
-				final_label="sequence_complete",
-				state_machine_allowed=False,
-				current_index=self.current_index,
-				completed_labels=list(self.completed_labels),
-				event_type="sequence_complete",
-				reason="all configured sequence targets are already complete",
-			)
+			first_target = self.target_order[0] if self.target_order else None
+			if first_target is not None and effective_label == first_target:
+				self.restart_count += 1
+				if self.restart_count < self.required_consecutive:
+					return StateTransition(
+						session_id=self.session_id,
+						expected_label=None,
+						effective_label=effective_label,
+						final_label="sequence_complete",
+						state_machine_allowed=False,
+						current_index=self.current_index,
+						completed_labels=list(self.completed_labels),
+						event_type="restart_pending",
+						reason=f"restart pending {self.restart_count}/{self.required_consecutive}",
+					)
+				self.current_index = 0
+				self.completed_labels = []
+				self.consecutive_count = 0
+				self.restart_count = 0
+				expected = self.expected_label()
+			else:
+				self.restart_count = 0
+				return StateTransition(
+					session_id=self.session_id,
+					expected_label=None,
+					effective_label=effective_label,
+					final_label="sequence_complete",
+					state_machine_allowed=False,
+					current_index=self.current_index,
+					completed_labels=list(self.completed_labels),
+					event_type="sequence_complete",
+					reason="all configured sequence targets are already complete",
+				)
 
 		if effective_label != expected:
+			self.consecutive_count = 0
+			if effective_label in self.completed_labels:
+				return StateTransition(
+					session_id=self.session_id,
+					expected_label=expected,
+					effective_label=effective_label,
+					final_label=effective_label,
+					state_machine_allowed=True,
+					current_index=self.current_index,
+					completed_labels=list(self.completed_labels),
+					event_type="awaiting_next",
+					reason=f"{effective_label} already confirmed; awaiting {expected}",
+				)
 			return StateTransition(
 				session_id=self.session_id,
 				expected_label=expected,
@@ -78,8 +121,23 @@ class SequenceStateMachine:
 				reason=f"expected {expected} before {effective_label}",
 			)
 
+		self.consecutive_count += 1
+		if self.consecutive_count < self.required_consecutive:
+			return StateTransition(
+				session_id=self.session_id,
+				expected_label=expected,
+				effective_label=effective_label,
+				final_label=effective_label,
+				state_machine_allowed=True,
+				current_index=self.current_index,
+				completed_labels=list(self.completed_labels),
+				event_type="counting",
+				reason=f"{self.consecutive_count}/{self.required_consecutive}",
+			)
+
 		self.completed_labels.append(effective_label)
 		self.current_index += 1
+		self.consecutive_count = 0
 		return StateTransition(
 			session_id=self.session_id,
 			expected_label=expected,

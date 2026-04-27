@@ -268,14 +268,19 @@ function DetailModal({
     const ld = rawData as CameraData;
     if (ld?.logic) {
       const logic = ld.logic as Record<string, unknown>;
-      const idx = ((logic.current_step_index as number) ?? 1) - 1;
-      const state = (logic.confirmed_state as string) ?? '';
+      const completed = (logic.completed_labels as string[] | undefined) ?? [];
+      const expected = (logic.expected_label as string | null | undefined) ?? null;
+      const effective = (logic.effective_label as string | null | undefined) ?? null;
+      const allowed = logic.allowed_transition as boolean | undefined;
+      const targets = ['Target1', 'Target2', 'Target3', 'Target4'];
       for (let i = 0; i < 4; i++) {
-        if (i < idx) s[i] = 'success';
-        else if (i === idx) {
-          if (state.includes('Complete') || state.includes('Success')) s[i] = 'success';
-          else if (logic.allowed_transition === false) s[i] = 'error';
-          else s[i] = 'processing';
+        const t = targets[i];
+        if (completed.includes(t)) {
+          s[i] = 'success';
+        } else if (t === expected) {
+          if (effective === expected) s[i] = 'processing';
+          else if (allowed === false && effective && effective !== 'unknown') s[i] = 'error';
+          else s[i] = 'idle';
         }
       }
     }
@@ -1316,14 +1321,19 @@ export default function App() {
     const steps: StepStatus[] = ['idle', 'idle', 'idle', 'idle'];
     if (!camData?.logic) return steps;
     const logic = camData.logic as Record<string, unknown>;
-    const idx = ((logic.current_step_index as number) ?? 1) - 1;
-    const state = (logic.confirmed_state as string) ?? '';
+    const completed = (logic.completed_labels as string[] | undefined) ?? [];
+    const expected = (logic.expected_label as string | null | undefined) ?? null;
+    const effective = (logic.effective_label as string | null | undefined) ?? null;
+    const allowed = logic.allowed_transition as boolean | undefined;
+    const targets = ['Target1', 'Target2', 'Target3', 'Target4'];
     for (let i = 0; i < 4; i++) {
-      if (i < idx) steps[i] = 'success';
-      else if (i === idx) {
-        if (state.includes("Complete") || state.includes("Success")) steps[i] = 'success';
-        else if (logic.allowed_transition === false) steps[i] = 'error';
-        else steps[i] = 'processing';
+      const t = targets[i];
+      if (completed.includes(t)) {
+        steps[i] = 'success';
+      } else if (t === expected) {
+        if (effective === expected) steps[i] = 'processing';
+        else if (allowed === false && effective && effective !== 'unknown') steps[i] = 'error';
+        else steps[i] = 'idle';
       }
     }
     return steps;
