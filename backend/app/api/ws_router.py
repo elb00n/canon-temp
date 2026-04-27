@@ -26,9 +26,9 @@ from app.service.operational_runtime import get_operational_service, normalize_m
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-FRAME_BROADCAST_INTERVAL = 0.1
-STATE_BROADCAST_INTERVAL = 0.5
-INFERENCE_MIN_INTERVAL = 0.35
+FRAME_BROADCAST_INTERVAL = 0.05
+STATE_BROADCAST_INTERVAL = 0.2
+INFERENCE_MIN_INTERVAL = 0.1
 JPEG_QUALITY = 90
 CAM_WS_SOURCE = "CAM_WS"
 

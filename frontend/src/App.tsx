@@ -901,7 +901,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
   const [modelMode, setModelMode] = useState<StreamModelMode>('real');
   const [scenario, setScenario] = useState('normal_target2_accept');
   const [targetOrder, setTargetOrder] = useState('Target1,Target2,Target3,Target4');
-  const [sampleMs, setSampleMs] = useState(350);
+  const [sampleMs, setSampleMs] = useState(100);
   const [frameWidth, setFrameWidth] = useState(1280);
   const [jpegQuality, setJpegQuality] = useState(0.9);
   const [saveArtifacts, setSaveArtifacts] = useState(false);
@@ -999,7 +999,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
     ws.onopen = () => {
       setConnectionState('streaming');
       sendFrame(ws);
-      intervalRef.current = window.setInterval(() => sendFrame(ws), Math.max(150, sampleMs));
+      intervalRef.current = window.setInterval(() => sendFrame(ws), Math.max(50, sampleMs));
     };
 
     ws.onmessage = (event) => {
@@ -1094,7 +1094,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1">
               <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Sample ms</span>
-              <input type="number" min={150} max={2000} step={50} disabled={streaming} value={sampleMs} onChange={(e) => setSampleMs(Number(e.target.value) || 350)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
+              <input type="number" min={50} max={2000} step={50} disabled={streaming} value={sampleMs} onChange={(e) => setSampleMs(Number(e.target.value) || 100)} className="w-full bg-[#18181b] border border-[#3f3f46] px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:border-[#E50012]" />
             </label>
             <label className="block space-y-1">
               <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Width</span>
