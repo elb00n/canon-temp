@@ -28,7 +28,22 @@ class SequenceStateMachine:
 
 	def apply(self, decision: DecisionResult) -> StateTransition:
 		expected = self.expected_label()
-		if not decision.accepted:
+
+		# Sequence-aware tie-breaker: 분류기가 ambiguous로 떨어졌더라도 expected 라벨이
+		# threshold를 통과했다면 그 라벨을 winner로 인정한다. 정적 영상 frame처럼 화면이
+		# 또렷할 때 T1 binary head가 다른 라벨에서도 0.99+ false positive를 내서 winner가
+		# 매 frame 뒤집히는 패턴을 막는 용도. 운영의 정상 흐름(single-pass / clear winner)
+		# 에서는 영향이 없다.
+		expected_canonical = canonical_target_name(expected) if expected else None
+		passed_canonical = {canonical_target_name(target) for target in decision.passed_targets}
+		accepted_via_sequence = (
+			not decision.accepted
+			and decision.decision_type == "ambiguous"
+			and expected_canonical is not None
+			and expected_canonical in passed_canonical
+		)
+
+		if not decision.accepted and not accepted_via_sequence:
 			self.consecutive_count = 0
 			self.restart_count = 0
 			return StateTransition(
@@ -43,7 +58,11 @@ class SequenceStateMachine:
 				reason="decision was not accepted",
 			)
 
-		effective_label = canonical_target_name(decision.predicted_label)
+		effective_label = (
+			expected_canonical
+			if accepted_via_sequence and expected_canonical is not None
+			else canonical_target_name(decision.predicted_label)
+		)
 		if not self.strict_order:
 			if effective_label in self.target_order and effective_label not in self.completed_labels:
 				self.completed_labels.append(effective_label)
