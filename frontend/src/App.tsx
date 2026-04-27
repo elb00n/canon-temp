@@ -1958,15 +1958,24 @@ export default function App() {
               <><Server size={13} className="text-[#64748b]" /><span className="text-xs text-[#64748b]">연결 끊김</span></>
             )}
           </div>
-          <button onClick={() => setSettingsOpen(true)} className="p-2 bg-[#ffffff] hover:bg-[#d9e1ec] border border-[#d9e1ec] hover:border-[#94a3b8] text-[#334155] hover:text-[#111827] transition-colors">
-            <Settings size={18} />
-          </button>
-          <button 
-            onClick={() => setSourceMode(true)} 
-            className="p-2 bg-[#ffffff] hover:bg-[#d9e1ec] border border-[#d9e1ec] hover:border-[#94a3b8] text-[#334155] hover:text-[#111827] transition-colors flex items-center gap-2 group"
+          <button
+            onClick={() => useAppStore.getState().setTestModeOpen(true)}
+            title="저장된 검사 로그 조회 / 영상·이미지 파일로 분석"
+            className="px-3 py-2 bg-[#ffffff] hover:bg-[#fff5f5] border border-[#d9e1ec] hover:border-[#CC0000] text-[#334155] hover:text-[#CC0000] transition-colors flex items-center gap-2"
           >
-            <Video size={18} className="group-hover:text-[#CC0000]" />
-            <span className="text-[10px] font-black hidden lg:block">카메라 시작</span>
+            <Database size={16} />
+            <span className="text-xs font-bold">파일로 테스트</span>
+          </button>
+          <button
+            onClick={() => setSourceMode(true)}
+            title="휴대폰 카메라로 검사 시작"
+            className="px-3 py-2 bg-[#CC0000] hover:bg-[#a30000] border border-[#CC0000] text-white transition-colors flex items-center gap-2 shadow-sm"
+          >
+            <Video size={16} />
+            <span className="text-xs font-bold">카메라 시작</span>
+          </button>
+          <button onClick={() => setSettingsOpen(true)} title="환경 설정" className="p-2 bg-[#ffffff] hover:bg-[#d9e1ec] border border-[#d9e1ec] hover:border-[#94a3b8] text-[#334155] hover:text-[#111827] transition-colors">
+            <Settings size={18} />
           </button>
         </div>
       </header>
@@ -2063,7 +2072,54 @@ export default function App() {
               </div>
             </div>
           )}
-          <div className={`flex-1 grid ${gridColsClass} gap-1.5 min-h-0`} style={{ gridAutoRows: '1fr' }}>
+          {activeItems.length === 0 && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="bg-white border border-[#d9e1ec] shadow-sm w-full max-w-3xl mx-6 p-10">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-[#CC0000] flex items-center justify-center">
+                    <Camera size={22} className="text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-[#111827] leading-none">검사를 시작하세요</h2>
+                    <p className="text-sm text-[#64748b] mt-1">아래 세 가지 방법 중 하나로 검사를 시작할 수 있습니다.</p>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-3 gap-3 mt-6">
+                  <button
+                    onClick={() => setSourceMode(true)}
+                    className="text-left p-4 border border-[#d9e1ec] hover:border-[#CC0000] hover:bg-[#fff5f5] transition-colors group"
+                  >
+                    <Video size={22} className="text-[#CC0000] mb-2" />
+                    <div className="font-bold text-[#111827] mb-1">휴대폰 카메라</div>
+                    <div className="text-xs text-[#64748b] leading-relaxed">실시간으로 화면을 비춰 검사를 진행합니다. 휴대폰을 같은 네트워크에서 페이지에 접속한 뒤 사용하세요.</div>
+                    <div className="text-[11px] font-bold text-[#CC0000] mt-3 group-hover:underline">시작하기 →</div>
+                  </button>
+                  <button
+                    onClick={() => useAppStore.getState().setTestModeOpen(true)}
+                    className="text-left p-4 border border-[#d9e1ec] hover:border-[#CC0000] hover:bg-[#fff5f5] transition-colors group"
+                  >
+                    <ImageIcon size={22} className="text-[#CC0000] mb-2" />
+                    <div className="font-bold text-[#111827] mb-1">이미지 파일</div>
+                    <div className="text-xs text-[#64748b] leading-relaxed">검사할 이미지를 업로드하면 결과를 캐러셀로 한 장씩 확인할 수 있습니다.</div>
+                    <div className="text-[11px] font-bold text-[#CC0000] mt-3 group-hover:underline">파일 선택 →</div>
+                  </button>
+                  <button
+                    onClick={() => useAppStore.getState().setTestModeOpen(true)}
+                    className="text-left p-4 border border-[#d9e1ec] hover:border-[#CC0000] hover:bg-[#fff5f5] transition-colors group"
+                  >
+                    <Database size={22} className="text-[#CC0000] mb-2" />
+                    <div className="font-bold text-[#111827] mb-1">영상 파일</div>
+                    <div className="text-xs text-[#64748b] leading-relaxed">기존 녹화 영상을 분석합니다. 영상이 재생되며 옆에 검사 결과가 함께 표시됩니다.</div>
+                    <div className="text-[11px] font-bold text-[#CC0000] mt-3 group-hover:underline">파일 선택 →</div>
+                  </button>
+                </div>
+                <div className="mt-6 pt-4 border-t border-[#eef2f7] text-[11px] text-[#94a3b8]">
+                  현재 연결된 실시간 카메라가 있다면 좌측 카메라 목록에서 클릭해 메인 화면에 띄울 수 있습니다.
+                </div>
+              </div>
+            </div>
+          )}
+          <div className={`flex-1 grid ${gridColsClass} gap-1.5 min-h-0 ${activeItems.length === 0 ? 'hidden' : ''}`} style={{ gridAutoRows: '1fr' }}>
             {activeItems.map((item) => {
               const key = itemKey(item);
               const isDraggingSrc = dragSrcKey === key;
