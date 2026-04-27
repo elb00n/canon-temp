@@ -12,6 +12,8 @@ from typing import Iterable
 import cv2
 import numpy as np
 
+from app.models.target_model import resolve_torch_device
+
 try:
 	from ultralytics import YOLO
 except ImportError:  # pragma: no cover
@@ -320,12 +322,13 @@ def augment_dataset(dataset_root: Path, output_root: Path, cfg: AugmentConfig, s
 def train_yolo(data_yaml: Path, weights: str, epochs: int, imgsz: int, batch: int, device: str, project: Path, name: str):
 	require_ultralytics()
 	model = YOLO(weights)
+	resolved_device = resolve_torch_device(device)
 	return model.train(
 		data=str(data_yaml),
 		epochs=epochs,
 		imgsz=imgsz,
 		batch=batch,
-		device=device,
+		device=resolved_device,
 		project=str(project),
 		name=name,
 		patience=20,
@@ -348,7 +351,8 @@ def train_yolo(data_yaml: Path, weights: str, epochs: int, imgsz: int, batch: in
 def evaluate_yolo(weights: Path, data_yaml: Path, split: str, imgsz: int, device: str, project: Path, name: str):
 	require_ultralytics()
 	model = YOLO(str(weights))
-	return model.val(data=str(data_yaml), split=split, imgsz=imgsz, device=device, project=str(project), name=name)
+	resolved_device = resolve_torch_device(device)
+	return model.val(data=str(data_yaml), split=split, imgsz=imgsz, device=resolved_device, project=str(project), name=name)
 
 
 def main() -> None:

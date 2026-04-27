@@ -8,6 +8,8 @@ from typing import Iterable
 import cv2
 import numpy as np
 
+from app.models.target_model import resolve_torch_device
+
 YOLO = None
 
 
@@ -255,7 +257,7 @@ class YoloScreenWarper:
 		if not self.weights.exists():
 			raise FileNotFoundError(f"weights not found: {self.weights}")
 		self.model = YOLO(str(self.weights))
-		self.device = device
+		self.device = resolve_torch_device(device)
 		self.conf = conf
 		self.imgsz = imgsz
 		self.padding_ratio = padding_ratio

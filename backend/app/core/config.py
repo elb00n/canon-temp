@@ -73,7 +73,7 @@ class SequenceDefaults:
 	sample_fps: float = 6.0
 	timeout_seconds: float = 30.0
 	input_size: int = 640
-	device: str = "cuda"
+	device: str = "cpu"
 	openvino_device: str = "CPU"
 
 

@@ -34,6 +34,7 @@ from app.service.operational_runtime import (
 	load_video_frames,
 	loaded_model_modes,
 )
+from app.models.target_model import resolve_torch_device
 
 
 logging.basicConfig(
@@ -102,7 +103,7 @@ async def on_startup() -> None:
 			save_artifacts=False,
 		)
 
-	logger.info("Warming up models on GPU...")
+	logger.info("Warming up models on %s...", resolve_torch_device(SETTINGS.sequence.device))
 	await asyncio.to_thread(_warmup)
 	logger.info("Canon backend ready. Operational DB: %s", DEFAULT_OPERATIONAL_DB_PATH)
 

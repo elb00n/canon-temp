@@ -47,3 +47,7 @@ backend/*.log
 
 # frontend
 frontend/.env
+backend/app/models/target_model.py
+backend/error_log.txt
+backend/data/db/factory_test.db
+backend/data/db/factory_test.db

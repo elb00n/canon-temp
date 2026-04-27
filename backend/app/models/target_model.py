@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import sys
+import warnings
 
 import cv2
 import numpy as np
@@ -46,6 +47,18 @@ class BinaryPrediction:
 	score: float
 	prob_yes: float
 	prob_no: float
+
+
+def resolve_torch_device(device: str = "cpu") -> str:
+	requested_device = str(device).strip()
+	if requested_device.startswith("cuda") and not torch.cuda.is_available():
+		warnings.warn(
+			f"CUDA is not available in this environment; falling back to CPU instead of {requested_device}.",
+			RuntimeWarning,
+			stacklevel=2,
+		)
+		return "cpu"
+	return requested_device
 
 
 def load_bgr_image(image_path: Path) -> np.ndarray:
@@ -105,9 +118,10 @@ class TargetResNet18(nn.Module):
 
 	@torch.no_grad()
 	def predict_bgr(self, image_bgr: np.ndarray, *, device: str = "cpu", threshold: float = DEFAULT_THRESHOLD) -> BinaryPrediction:
-		input_tensor = preprocess_for_resnet(image_bgr).unsqueeze(0).to(device)
-		self = self.to(device)
-		return self.predict(input_tensor, threshold=threshold)
+		resolved_device = resolve_torch_device(device)
+		input_tensor = preprocess_for_resnet(image_bgr).unsqueeze(0).to(resolved_device)
+		model = self.to(resolved_device)
+		return model.predict(input_tensor, threshold=threshold)
 
 
 class OpenVINOTargetResNet18:
@@ -165,10 +179,11 @@ def build_target_model(*, pretrained: bool = True, freeze_backbone: bool = False
 
 def load_target_model(weights_path: Path | None = None, *, device: str = "cpu") -> TargetResNet18:
 	model = build_target_model(pretrained=False)
+	resolved_device = resolve_torch_device(device)
 	if weights_path is not None:
-		state_dict = torch.load(weights_path, map_location=device)
+		state_dict = torch.load(weights_path, map_location=resolved_device)
 		model.load_state_dict(state_dict)
-	model.to(device)
+	model.to(resolved_device)
 	model.eval()
 	return model
 

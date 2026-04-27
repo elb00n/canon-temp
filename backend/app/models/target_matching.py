@@ -14,6 +14,7 @@ from PIL import Image
 from torchvision.models import ResNet18_Weights, resnet18
 
 from app.models.sift import SIFTMatcher
+from app.models.target_model import resolve_torch_device
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -202,7 +203,7 @@ def rerank_with_sift(
 
 class FeatureExtractor:
 	def __init__(self, device: str = "cpu") -> None:
-		self.device = torch.device(device)
+		self.device = torch.device(resolve_torch_device(device))
 		weights = ResNet18_Weights.DEFAULT
 		backbone = resnet18(weights=weights)
 		self.model = torch.nn.Sequential(*list(backbone.children())[:-1]).to(self.device)
