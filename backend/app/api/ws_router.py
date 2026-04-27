@@ -26,7 +26,7 @@ from app.service.operational_runtime import get_operational_service, normalize_m
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-FRAME_BROADCAST_INTERVAL = 0.05
+FRAME_BROADCAST_INTERVAL = 0.033
 STATE_BROADCAST_INTERVAL = 0.2
 INFERENCE_MIN_INTERVAL = 0.1
 JPEG_QUALITY = 90
@@ -148,6 +148,15 @@ class CameraStateStore:
 			state.last_frame_jpeg = frame_jpeg
 			state.last_frame_time = time.monotonic()
 
+	def update_frame_jpeg(self, cam_id: str, frame_jpeg: str) -> None:
+		with self._lock:
+			state = self._cameras.get(cam_id)
+			if state is None:
+				state = self._new_state(cam_id)
+				self._cameras[cam_id] = state
+			state.last_frame_jpeg = frame_jpeg
+			state.last_frame_time = time.monotonic()
+
 	def prepare_inference(
 		self,
 		cam_id: str,
@@ -245,6 +254,20 @@ class CameraStateStore:
 			if state and state.last_frame_jpeg:
 				return state.last_frame_jpeg
 			return None
+
+	def get_frame_snapshot(self, cam_id: str) -> tuple[Any, float]:
+		with self._lock:
+			state = self._cameras.get(cam_id)
+			if state and state.last_frame is not None:
+				return state.last_frame.copy(), state.last_frame_time
+			return None, 0.0
+
+	def get_frame_jpeg_snapshot(self, cam_id: str) -> tuple[str | None, float]:
+		with self._lock:
+			state = self._cameras.get(cam_id)
+			if state and state.last_frame_jpeg:
+				return state.last_frame_jpeg, state.last_frame_time
+			return None, 0.0
 
 
 camera_store = CameraStateStore()
@@ -540,9 +563,9 @@ async def _enqueue_frame_envelope(
 		return False
 
 	camera_id = str(envelope.get("camera_id") or CAM_WS_SOURCE)
-	frame_bgr = _decode_frame_text(frame_text)
+	frame_jpeg = _frame_text_to_base64(frame_text)
 	camera_store.register(camera_id)
-	camera_store.update_frame(camera_id, frame_bgr, _frame_text_to_base64(frame_text))
+	camera_store.update_frame_jpeg(camera_id, frame_jpeg)
 
 	model_mode = normalize_model_mode(str(envelope.get("model_mode") or default_model_mode))
 	scenario = str(envelope.get("scenario") or default_scenario)
@@ -555,6 +578,13 @@ async def _enqueue_frame_envelope(
 	)
 	if not should_infer:
 		return False
+
+	try:
+		frame_bgr = _decode_frame_text(frame_text)
+	except Exception:
+		camera_store.finish_inference(camera_id, session_id)
+		raise
+	camera_store.update_frame(camera_id, frame_bgr, frame_jpeg)
 
 	asyncio.create_task(
 		_run_inference_task(
@@ -576,6 +606,7 @@ async def _enqueue_frame_envelope(
 
 async def _broadcast_loop() -> None:
 	last_state_time = 0.0
+	last_frame_sent_at: dict[str, float] = {}
 
 	while True:
 		await asyncio.sleep(FRAME_BROADCAST_INTERVAL)
@@ -585,20 +616,29 @@ async def _broadcast_loop() -> None:
 
 		cam_ids = camera_store.camera_ids()
 		now = time.monotonic()
+		current_ids = set(cam_ids)
+		for stale_id in list(last_frame_sent_at):
+			if stale_id not in current_ids:
+				last_frame_sent_at.pop(stale_id, None)
 
+		frame_messages: list[dict[str, str]] = []
 		for cam_id in cam_ids:
-			frame_jpeg = camera_store.get_frame_jpeg(cam_id)
+			frame_jpeg, frame_time = camera_store.get_frame_jpeg_snapshot(cam_id)
 			if frame_jpeg is None:
-				frame = camera_store.get_frame(cam_id)
+				frame, frame_time = camera_store.get_frame_snapshot(cam_id)
 				if frame is None:
 					continue
 				frame_jpeg = _encode_frame(frame)
+			if frame_time <= last_frame_sent_at.get(cam_id, 0.0):
+				continue
+			last_frame_sent_at[cam_id] = frame_time
+			frame_messages.append({"type": "video_frame", "cameraId": cam_id, "frame": frame_jpeg})
+
+		if frame_messages:
 			try:
-				await manager.broadcast(
-					json.dumps({"type": "video_frame", "cameraId": cam_id, "frame": frame_jpeg})
-				)
+				await manager.broadcast(json.dumps(frame_messages))
 			except Exception as exc:
-				logger.warning("frame broadcast error for %s: %s", cam_id, exc)
+				logger.warning("frame broadcast error: %s", exc)
 
 		if now - last_state_time >= STATE_BROADCAST_INTERVAL:
 			last_state_time = now
