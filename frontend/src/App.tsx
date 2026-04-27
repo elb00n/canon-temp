@@ -246,7 +246,7 @@ function DetailModal({
     if (item.type !== 'camera' || !isAuthorized) return;
     setLoading(true);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/override`, {
+      await axios.post(`/api/override`, {
         cam_id: item.id,
         predicted_label: editLabel,
         confidence: confidence,
@@ -541,9 +541,10 @@ function TestModeModal() {
     setLoading(true);
     const currentOffset = isNew ? 0 : offset;
     try {
-      const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/inspection-logs?offset=${currentOffset}&limit=${LIMIT}`);
+      const resp = await fetch(`/api/inspection-logs?offset=${currentOffset}&limit=${LIMIT}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      
+
       if (Array.isArray(data)) {
         if (isNew) {
           setDbLogs(data);
@@ -566,40 +567,48 @@ function TestModeModal() {
     if (!e.target.files || e.target.files.length === 0) return;
     const formData = new FormData();
     Array.from(e.target.files).forEach(f => formData.append("files", f));
-    
+
     setLoading(true);
+    let inspectionsCount: number | null = null;
     try {
-      const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/inspect-image`, {
+      const resp = await fetch(`/api/inspect-image`, {
         method: "POST",
         body: formData
       });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      alert(`${data.inspections?.length || 0}개의 파일 가상 재검사 완료!`);
-      fetchLogs(true);
+      inspectionsCount = data.inspections?.length ?? 0;
     } catch (err) {
       console.error(err);
       alert("검사 요청 실패");
-      setLoading(false);
     } finally {
+      setLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+    if (inspectionsCount !== null) {
+      alert(`${inspectionsCount}개의 파일 가상 재검사 완료!`);
+      fetchLogs(true);
     }
   };
 
   const handleReinspect = async (logId: number) => {
     setLoading(true);
+    let success = false;
     try {
-      const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/reinspect-log/${logId}`, {
+      const resp = await fetch(`/api/reinspect-log/${logId}`, {
         method: "POST"
       });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      if(data.status === "success") {
-        alert(`${t.reinspect} 완료!`);
-        fetchLogs(true);
-      }
+      success = data.status === "success";
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+    if (success) {
+      alert(`${t.reinspect} 완료!`);
+      fetchLogs(true);
     }
   };
 
