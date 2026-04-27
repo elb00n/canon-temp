@@ -15,7 +15,11 @@ export type ViewItem = { type: 'camera'; id: string } | { type: 'image'; id: str
 type StreamModelMode = 'real' | 'mock';
 type StreamConnectionState = 'idle' | 'connecting' | 'streaming' | 'error';
 
-const DASHBOARD_WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
+const DASHBOARD_WS_URL = import.meta.env.VITE_WS_URL || (
+  typeof window !== 'undefined'
+    ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
+    : 'ws://localhost:8080/ws'
+);
 
 function buildSourceWsUrl(cameraId: string, modelMode: StreamModelMode, scenario: string) {
   const base = DASHBOARD_WS_URL.replace(/\/$/, '');
