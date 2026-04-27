@@ -19,6 +19,34 @@ export interface VideoAnalysis {
   error?: string;
 }
 
+export interface ImageInspection {
+  predicted_label: string;
+  final_label: string;
+  confidence: number;
+  decision_type?: string;
+  scores?: Record<string, number>;
+  thresholds?: Record<string, number>;
+  anomaly_flag?: boolean;
+  decision_reason?: string;
+  is_unknown?: boolean;
+  ambiguous?: boolean;
+  reinspect_needed?: boolean;
+}
+
+export interface ImageItem {
+  filename: string;
+  imageUrl: string;
+  result?: ImageInspection | null;
+  error?: string;
+}
+
+export interface ImageAnalysis {
+  items: ImageItem[];
+  currentIndex: number;
+  status: 'analyzing' | 'done' | 'error';
+  error?: string;
+}
+
 interface AppState {
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -43,6 +71,12 @@ interface AppState {
   appendVideoFrameForCamera: (cameraId: string, frame: VideoFrameResult) => void;
   finishVideoAnalysis: (error?: string) => void;
   clearVideoAnalysis: () => void;
+  imageAnalysis: ImageAnalysis | null;
+  startImageAnalysis: (items: ImageItem[]) => void;
+  setImageAnalysisIndex: (idx: number) => void;
+  applyImageInspections: (results: (ImageInspection | { error: string })[]) => void;
+  setImageAnalysisError: (error: string) => void;
+  clearImageAnalysis: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -93,5 +127,35 @@ export const useAppStore = create<AppState>((set) => ({
       try { URL.revokeObjectURL(state.videoAnalysis.videoUrl); } catch { /* ignore */ }
     }
     return { videoAnalysis: null };
+  }),
+  imageAnalysis: null,
+  startImageAnalysis: (items) => set(() => ({
+    imageAnalysis: { items, currentIndex: 0, status: 'analyzing' },
+  })),
+  setImageAnalysisIndex: (idx) => set((state) => {
+    if (!state.imageAnalysis) return {};
+    const max = state.imageAnalysis.items.length - 1;
+    const clamped = Math.max(0, Math.min(max, idx));
+    return { imageAnalysis: { ...state.imageAnalysis, currentIndex: clamped } };
+  }),
+  applyImageInspections: (results) => set((state) => {
+    if (!state.imageAnalysis) return {};
+    const items = state.imageAnalysis.items.map((item, i) => {
+      const r = results[i];
+      if (!r) return item;
+      if ('error' in r) return { ...item, error: r.error, result: null };
+      return { ...item, result: r };
+    });
+    return { imageAnalysis: { ...state.imageAnalysis, items, status: 'done' } };
+  }),
+  setImageAnalysisError: (error) => set((state) => {
+    if (!state.imageAnalysis) return {};
+    return { imageAnalysis: { ...state.imageAnalysis, status: 'error', error } };
+  }),
+  clearImageAnalysis: () => set((state) => {
+    state.imageAnalysis?.items.forEach((item) => {
+      if (item.imageUrl) { try { URL.revokeObjectURL(item.imageUrl); } catch { /* ignore */ } }
+    });
+    return { imageAnalysis: null };
   }),
 }));

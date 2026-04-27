@@ -3,11 +3,11 @@ import axios from "axios";
 import {
   Camera, Settings, Activity, BoxSelect, Cpu, ScanSearch, CheckCircle2,
   Video, XCircle, Globe, X, Image as ImageIcon, Server, ShieldAlert,
-  Database, RefreshCw, Save, ChevronRight,
+  Database, RefreshCw, Save, ChevronRight, ChevronLeft,
   Lock
 } from "lucide-react";
 import { useAppStore } from "./store";
-import type { ImageLog, CameraData, VideoFrameResult } from "./store";
+import type { ImageLog, CameraData, VideoFrameResult, ImageInspection } from "./store";
 import { locales } from "./locales";
 
 export type StepStatus = 'idle' | 'processing' | 'success' | 'error';
@@ -529,7 +529,7 @@ const VIDEO_EXTS = /\.(mp4|webm|mov|avi|mkv|m4v|wmv|flv|ts|ogv)$/i;
 function TestModeModal() {
   const {
     isTestModeOpen, setTestModeOpen, dbLogs, setDbLogs, language,
-    startVideoAnalysis,
+    startVideoAnalysis, startImageAnalysis, applyImageInspections, setImageAnalysisError,
   } = useAppStore();
   const t = locales[language];
   const [loading, setLoading] = useState(false);
@@ -593,27 +593,48 @@ function TestModeModal() {
         startStreamingVideo(videos[0]);
       }
 
-      // 이미지는 기존 흐름 (모든 이미지를 한 번에 batch 처리)
+      // 이미지는 캐러셀 분석 뷰로 — store에 items 등록 후 batch 추론을 비동기로 실행
       if (images.length > 0) {
+        const items = images.map((f) => ({
+          filename: f.name,
+          imageUrl: URL.createObjectURL(f),
+        }));
+        startImageAnalysis(items);
+        setTestModeOpen(false);
+
         const fd = new FormData();
-        images.forEach(f => fd.append('files', f));
-        setLoading(true);
-        let inspectionsCount: number | null = null;
-        try {
-          const resp = await fetch('/api/inspect-image', { method: 'POST', body: fd });
-          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          const data = await resp.json();
-          inspectionsCount = data.inspections?.length ?? 0;
-        } catch (err) {
-          console.error(err);
-          alert('이미지 검사 요청 실패');
-        } finally {
-          setLoading(false);
-        }
-        if (inspectionsCount !== null) {
-          alert(`${inspectionsCount}개의 이미지 검사 완료!`);
-          fetchLogs(true);
-        }
+        images.forEach((f) => fd.append('files', f));
+        fetch('/api/inspect-image', { method: 'POST', body: fd })
+          .then(async (resp) => {
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            const insp = (data.inspections ?? []) as Array<Record<string, unknown>>;
+            const results = images.map((_, i) => {
+              const r = insp[i];
+              if (!r) return { error: '결과 없음' };
+              if (r.error) return { error: String(r.error) };
+              const detail = (r.operational_detail ?? {}) as Record<string, unknown>;
+              const decision = (detail.decision ?? {}) as Record<string, unknown>;
+              return {
+                predicted_label: String(detail.predicted_label ?? r.predicted_label ?? 'unknown'),
+                final_label: String(detail.final_label ?? r.final_label ?? 'unknown'),
+                confidence: Number(decision.top1_score ?? r.confidence ?? 0),
+                decision_type: detail.decision_type as string | undefined,
+                scores: detail.scores as Record<string, number> | undefined,
+                thresholds: detail.thresholds as Record<string, number> | undefined,
+                anomaly_flag: r.anomaly_flag as boolean | undefined,
+                decision_reason: decision.reason as string | undefined,
+                is_unknown: detail.unknown as boolean | undefined,
+                ambiguous: detail.ambiguous as boolean | undefined,
+                reinspect_needed: detail.reinspect_needed as boolean | undefined,
+              };
+            });
+            applyImageInspections(results);
+          })
+          .catch((err) => {
+            console.error(err);
+            setImageAnalysisError(String(err?.message ?? err));
+          });
       }
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -1460,6 +1481,202 @@ function VideoAnalysisModal() {
 }
 
 
+// ─── 이미지 분석 캐러셀 뷰 ─────────────────────────────────────────────────
+function ImageAnalysisModal() {
+  const { imageAnalysis, setImageAnalysisIndex, clearImageAnalysis } = useAppStore();
+
+  // 키보드 좌/우 화살표로 캐러셀 이동
+  useEffect(() => {
+    if (!imageAnalysis) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') setImageAnalysisIndex(imageAnalysis.currentIndex - 1);
+      else if (e.key === 'ArrowRight') setImageAnalysisIndex(imageAnalysis.currentIndex + 1);
+      else if (e.key === 'Escape') clearImageAnalysis();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [imageAnalysis, setImageAnalysisIndex, clearImageAnalysis]);
+
+  if (!imageAnalysis) return null;
+  const { items, currentIndex, status, error } = imageAnalysis;
+  const total = items.length;
+  const item = items[currentIndex];
+  const result: ImageInspection | null | undefined = item?.result;
+  const itemError = item?.error;
+
+  const goPrev = () => setImageAnalysisIndex(currentIndex - 1);
+  const goNext = () => setImageAnalysisIndex(currentIndex + 1);
+
+  const labelChip = (label: string) => {
+    const isUnknown = label === 'unknown' || label === 'sequence_blocked';
+    return (
+      <span className={`font-mono text-sm ${isUnknown ? 'text-amber-400' : 'text-zinc-100'}`}>{label || '-'}</span>
+    );
+  };
+
+  const targets = ['Target1', 'Target2', 'Target3', 'Target4'];
+
+  const statusLabel = (() => {
+    if (status === 'analyzing') {
+      const completed = items.filter((it) => it.result || it.error).length;
+      return `분석 중 (${completed}/${total})`;
+    }
+    if (status === 'done') return `완료 (${total} images)`;
+    if (status === 'error') return `에러: ${error ?? ''}`;
+    return '';
+  })();
+
+  return (
+    <div className="fixed inset-0 bg-black/85 z-[160] flex items-center justify-center p-3">
+      <div className="bg-[#18181b] border-2 border-[#a855f7] w-[96vw] h-[94vh] flex flex-col shadow-[0_0_50px_rgba(168,85,247,0.2)]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#3f3f46] bg-[#27272a]">
+          <div className="flex items-center gap-3">
+            <div className="bg-[#a855f7]/10 p-2 border border-[#a855f7]/30">
+              <ImageIcon size={20} className="text-[#a855f7]" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-zinc-100 tracking-tighter uppercase leading-none">IMAGE ANALYSIS</h2>
+              <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest mt-1 truncate max-w-[60vw]">
+                {item?.filename ?? '-'} · {currentIndex + 1} / {total}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-xs font-mono text-zinc-300">{statusLabel}</div>
+            <button
+              onClick={clearImageAnalysis}
+              className="p-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-zinc-300 hover:text-white"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex items-center justify-center bg-black p-3 min-w-0 relative">
+            {/* prev */}
+            <button
+              onClick={goPrev}
+              disabled={currentIndex === 0}
+              className="absolute left-3 top-1/2 -translate-y-1/2 p-3 bg-[#18181b]/80 hover:bg-[#27272a] border border-zinc-700 text-zinc-300 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed z-10"
+              aria-label="이전 이미지"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            {item?.imageUrl ? (
+              <img
+                src={item.imageUrl}
+                alt={item.filename}
+                className="max-w-full max-h-full object-contain"
+              />
+            ) : (
+              <div className="text-zinc-500 text-sm">이미지 없음</div>
+            )}
+            <button
+              onClick={goNext}
+              disabled={currentIndex >= total - 1}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-[#18181b]/80 hover:bg-[#27272a] border border-zinc-700 text-zinc-300 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed z-10"
+              aria-label="다음 이미지"
+            >
+              <ChevronRight size={24} />
+            </button>
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 bg-[#18181b]/80 border border-zinc-700">
+              {items.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setImageAnalysisIndex(i)}
+                  className={`w-2 h-2 ${i === currentIndex ? 'bg-[#a855f7]' : 'bg-zinc-600 hover:bg-zinc-500'}`}
+                  aria-label={`${i + 1}번 이미지`}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="w-[380px] flex-shrink-0 border-l border-[#3f3f46] flex flex-col bg-[#18181b] overflow-auto">
+            <div className="p-4 border-b border-[#3f3f46]">
+              <h3 className="text-[10px] font-black text-zinc-500 tracking-widest uppercase mb-3">PREDICTION</h3>
+              {!result && !itemError && (
+                <div className="text-xs text-zinc-500 font-mono">분석 결과 대기 중...</div>
+              )}
+              {itemError && (
+                <div className="text-xs text-amber-400 font-mono">에러: {itemError}</div>
+              )}
+              {result && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
+                    <div className="flex flex-col">
+                      <span className="text-zinc-500 uppercase tracking-widest">Predicted</span>
+                      {labelChip(result.predicted_label)}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-zinc-500 uppercase tracking-widest">Final</span>
+                      {labelChip(result.final_label)}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-zinc-500 uppercase tracking-widest">Confidence</span>
+                      <span className="font-mono text-sm text-zinc-100 tabular-nums">{(result.confidence * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-zinc-500 uppercase tracking-widest">Decision</span>
+                      <span className="font-mono text-xs text-zinc-300">{result.decision_type ?? '-'}</span>
+                    </div>
+                  </div>
+                  {(result.is_unknown || result.ambiguous || result.reinspect_needed || result.anomaly_flag) && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {result.is_unknown && <span className="px-2 py-0.5 text-[9px] font-black bg-zinc-700 text-zinc-200 uppercase tracking-widest">UNKNOWN</span>}
+                      {result.ambiguous && <span className="px-2 py-0.5 text-[9px] font-black bg-amber-700 text-amber-100 uppercase tracking-widest">AMBIGUOUS</span>}
+                      {result.reinspect_needed && <span className="px-2 py-0.5 text-[9px] font-black bg-yellow-700 text-yellow-100 uppercase tracking-widest">REINSPECT</span>}
+                      {result.anomaly_flag && <span className="px-2 py-0.5 text-[9px] font-black bg-[#E50012] text-white uppercase tracking-widest">ALARM</span>}
+                    </div>
+                  )}
+                  {result.decision_reason && (
+                    <div className="text-[10px] font-mono text-zinc-500 pt-1">사유: {result.decision_reason}</div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {result?.scores && (
+              <div className="p-4 border-b border-[#3f3f46]">
+                <h3 className="text-[10px] font-black text-zinc-500 tracking-widest uppercase mb-3">CLASSIFIER SCORES</h3>
+                <div className="space-y-2">
+                  {targets.map((t) => {
+                    const score = Number(result.scores?.[t] ?? 0);
+                    const threshold = Number(result.thresholds?.[t] ?? 0);
+                    const passed = threshold > 0 && score >= threshold;
+                    const pct = Math.round(score * 100);
+                    return (
+                      <div key={t}>
+                        <div className="flex items-center justify-between text-[10px] font-mono mb-1">
+                          <span className="text-zinc-300">{t}</span>
+                          <span className={`tabular-nums ${passed ? 'text-[#22c55e]' : 'text-zinc-500'}`}>
+                            {(score).toFixed(4)}{threshold > 0 && ` / ${threshold.toFixed(2)}`}
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-zinc-800 overflow-hidden">
+                          <div
+                            className={`h-full transition-all ${passed ? 'bg-[#22c55e]' : 'bg-zinc-500'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="px-4 py-3 text-[10px] font-mono text-zinc-500">
+              ←/→ 키로도 이미지 전환 가능
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function App() {
   const {
     language, setSettingsOpen, liveData, updateLiveData, imageLogs,
@@ -1698,6 +1915,7 @@ export default function App() {
       <AdminModal />
       <TestModeModal />
       <VideoAnalysisModal />
+      <ImageAnalysisModal />
       {detailItem && (
         <DetailModal
           item={detailItem}
