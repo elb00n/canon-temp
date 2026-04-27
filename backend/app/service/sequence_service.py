@@ -54,6 +54,7 @@ class TargetStepResult:
 	threshold: float
 	start_frame: int | None = None
 	confirmed_frame: int | None = None
+	confirmed_time_ms: float | None = None
 	completed: bool = False
 	processed_frames: int = 0
 	detections_seen: int = 0
@@ -314,6 +315,7 @@ class SequenceService:
 							target_results=target_results,
 							backends_used=backends_used,
 							confirmed_frames_saved=confirmed_frames_saved,
+							video_fps=video_fps,
 						)
 			ok, frame_bgr = cap.retrieve()
 			if not ok:
@@ -373,6 +375,7 @@ class SequenceService:
 			if consecutive_yes >= current_context.min_consecutive:
 				current_result.completed = True
 				current_result.confirmed_frame = frame_index
+				current_result.confirmed_time_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
 				if self.config.save_confirmed_frames and prediction_label is not None and prediction_score is not None:
 					confirmed_frames_saved += self.save_confirmed_frames(
 						confirmed_dir,
@@ -418,6 +421,7 @@ class SequenceService:
 			target_results=target_results,
 			backends_used=backends_used,
 			confirmed_frames_saved=confirmed_frames_saved,
+			video_fps=video_fps,
 		)
 
 	def _build_video_result(
@@ -432,6 +436,7 @@ class SequenceService:
 		target_results: list[TargetStepResult],
 		backends_used: set[str],
 		confirmed_frames_saved: int,
+		video_fps: float = 30.0,
 	) -> dict[str, object]:
 		confirmed_targets = sum(1 for result in target_results if result.completed)
 		video_summary = VideoSequenceSummary(
@@ -466,6 +471,7 @@ class SequenceService:
 			**asdict(video_summary),
 			"confirmed_frames_saved": confirmed_frames_saved,
 			"backends_used": sorted(backends_used),
+			"video_fps": video_fps,
 		}
 
 	def run(self) -> dict[str, object]:

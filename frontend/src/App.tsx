@@ -666,12 +666,9 @@ function TestModeModal() {
                 <th className="p-4 pl-6">ID</th>
                 <th className="p-4">Timestamp</th>
                 <th className="p-4">Source</th>
-                <th className="p-4">State</th>
-                <th className="p-4">Label</th>
-                <th className="p-4">Conf</th>
-                <th className="p-4">Anomaly</th>
+                <th className="p-4 min-w-[140px]">State</th>
+                <th className="p-4 min-w-[280px]">Target Timestamps</th>
                 <th className="p-4">File Path</th>
-                <th className="p-4 pr-6 text-center">{t.action}</th>
               </tr>
             </thead>
             <tbody className="text-sm font-mono text-zinc-400 divide-y divide-zinc-800/50">
@@ -679,30 +676,50 @@ function TestModeModal() {
                 <tr key={log.id} className="hover:bg-white/5 transition-colors group">
                   <td className="p-5 pl-6 text-zinc-600 font-bold group-hover:text-zinc-400 transition-colors">#{log.id}</td>
                   <td className="p-5 whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
-                  <td className="p-5 text-blue-400/80 font-black uppercase text-[10px]">{log.source_type}</td>
-                  <td className="p-5">
-                    <span className={`px-3 py-1.5 rounded-sm text-[11px] font-black tracking-tighter ${log.confirmed_state === 'ERROR_SEQUENCE' ? 'bg-red-500/10 text-red-500 border border-red-500/30' : 'bg-green-500/10 text-green-500 border border-green-500/30'}`}>
-                      {log.confirmed_state}
-                    </span>
+                  <td className="p-5 text-blue-400/80 font-black uppercase text-[10px]">
+                    {log.source_type.includes('sequence') || log.source_type.includes('video') ? 'VIDEO' : 
+                     log.source_type.includes('image') ? 'IMAGE' : 
+                     log.source_type.includes('camera') ? 'CAMERA' : 
+                     log.source_type}
                   </td>
-                  <td className="p-5 text-zinc-200 font-black">{log.predicted_label}</td>
-                  <td className="p-5 text-[#f59e0b] font-black text-base italic">{(log.confidence * 100).toFixed(1)}%</td>
-                  <td className="p-5">
-                    {log.anomaly_flag ? 
-                      <div className="flex items-center gap-2 text-red-500"><ShieldAlert size={14} className="animate-pulse" /><span className="font-black text-[10px] tracking-widest">ALARM</span></div> 
-                      : <span className="text-zinc-800 font-black text-[10px]">NORMAL</span>
-                    }
-                  </td>
+                  {(() => {
+                    const extra = JSON.parse(log.extra_json || "{}");
+                    const isVideo = log.source_type.includes('sequence') || log.source_type.includes('video');
+                    const completedCount = extra.state?.completed_labels?.length || 0;
+                    const targetTimes = extra.state?.target_times || {};
+                    
+                    return (
+                      <>
+                        <td className="p-5">
+                          {isVideo ? (
+                            <span className="px-3 py-1.5 rounded-sm text-[11px] font-black tracking-tighter bg-[#8b5cf6]/20 text-[#c4b5fd] border border-[#8b5cf6]/30">
+                              {completedCount} / 4 단계 통과
+                            </span>
+                          ) : (
+                            <span className={`px-3 py-1.5 rounded-sm text-[11px] font-black tracking-tighter ${log.confirmed_state === 'ERROR_SEQUENCE' ? 'bg-red-500/10 text-red-500 border border-red-500/30' : 'bg-green-500/10 text-green-500 border border-green-500/30'}`}>
+                              {log.confirmed_state}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-5 font-black italic">
+                          {isVideo ? (
+                            <div className="flex gap-2 text-[10px] font-mono whitespace-nowrap bg-black/40 px-2 py-1.5 rounded border border-[#3f3f46] w-max">
+                              <span className={completedCount >= 1 ? "text-[#22c55e]" : "text-zinc-600"}>T1: {targetTimes.Target1 || "--:--"}</span>
+                              <span className="text-zinc-700">|</span>
+                              <span className={completedCount >= 2 ? "text-[#22c55e]" : "text-zinc-600"}>T2: {targetTimes.Target2 || "--:--"}</span>
+                              <span className="text-zinc-700">|</span>
+                              <span className={completedCount >= 3 ? "text-[#22c55e]" : "text-zinc-600"}>T3: {targetTimes.Target3 || "--:--"}</span>
+                              <span className="text-zinc-700">|</span>
+                              <span className={completedCount >= 4 ? "text-[#22c55e]" : "text-zinc-600"}>T4: {targetTimes.Target4 || "--:--"}</span>
+                            </div>
+                          ) : (
+                            <span className="text-[#f59e0b] text-base">{(log.confidence * 100).toFixed(1)}%</span>
+                          )}
+                        </td>
+                      </>
+                    )
+                  })()}
                   <td className="p-5 text-[10px] text-zinc-500 truncate max-w-[300px] hover:text-[#38bdf8] cursor-help transition-colors">{log.file_path}</td>
-                  <td className="p-5 pr-6 text-center">
-                    <button 
-                      onClick={() => handleReinspect(log.id)}
-                      disabled={loading}
-                      className="px-5 py-3 font-normal bg-zinc-800 hover:bg-[#E50012] text-white text-[11px] font-black tracking-widest transition-all shadow-md active:scale-90 border border-zinc-700"
-                    >
-                      {t.reinspect}
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>

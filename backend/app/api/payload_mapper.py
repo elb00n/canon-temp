@@ -169,6 +169,7 @@ def operational_response_to_log(
 				"frame_index": response.get("frame_index"),
 				"decision_type": response.get("decision_type"),
 				"state": response.get("state"),
+				"scores": response.get("scores", {}),
 			},
 			ensure_ascii=False,
 		),

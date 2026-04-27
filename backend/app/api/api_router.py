@@ -237,24 +237,110 @@ async def inspect_image(
 					}
 				)
 			elif ext in _VIDEO_EXTS:
+				from app.service.sequence_service import SequenceService, SequenceRunConfig
+				from datetime import datetime, timezone
+				import json
+
 				request_tmp_path.mkdir(parents=True, exist_ok=True)
 				save_path = request_tmp_path / filename
 				save_path.write_bytes(content)
-				frames = load_video_frames(save_path, max_frames=max(1, min(frame_count, 500)))
-				sequence_result = await loop.run_in_executor(
-					None,
-					lambda: service.infer_sequence(
-						frames,
-						scenario=scenario,
-						session_id=file_session_id,
-						target_order=parsed_target_order,
-						strict_sequence=strict_sequence,
-						reset_state=True,
-						save_artifacts=save_artifacts,
-					),
+
+				seq_config = SequenceRunConfig(
+					source=[save_path],
+					target_order=parsed_target_order or ["target_1", "target_2", "target_3", "target_4"],
 				)
-				final_response = dict(sequence_result["final_result"])
-				final_response["db_path"] = str(service.config.db_path)
+				seq_service = SequenceService(seq_config)
+
+				sequence_result_summary = await loop.run_in_executor(
+					None,
+					lambda: seq_service.process_video(save_path, run_root=request_tmp_path),
+				)
+
+				# sequence_service 결과를 operational_log 포맷에 맞게 변환
+				targets = sequence_result_summary.get("targets", [])
+				
+				def _get(obj, key, default=None):
+					if isinstance(obj, dict):
+						return obj.get(key, default)
+					return getattr(obj, key, default)
+
+				completed_labels = []
+				scores = {}
+				target_times = {}
+				final_label = "unknown"
+				top_score = 0.0
+
+				for t in targets:
+					raw_name = _get(t, "target_name", "unknown")
+					# "target_1" -> "Target1" 형식으로 변환하여 프론트엔드 호환성 유지
+					t_name = raw_name.replace("target_", "Target").replace("unknown", "Unknown")
+					
+					if _get(t, "completed", False):
+						completed_labels.append(t_name)
+						# OpenCV가 기록한 실제 영상 타임코드(ms) → MM:SS 변환
+						time_ms = _get(t, "confirmed_time_ms", None)
+						if time_ms is not None and time_ms > 0:
+							total_seconds = int(time_ms / 1000)
+							mins = total_seconds // 60
+							secs = total_seconds % 60
+							target_times[t_name] = f"{mins:02d}:{secs:02d}"
+						else:
+							target_times[t_name] = "--:--"
+					else:
+						target_times[t_name] = "--:--"
+						
+					scores[t_name] = _get(t, "last_score", 0.0)
+
+				if targets:
+					raw_final = _get(targets[-1], "last_label", "unknown")
+					final_label = raw_final.replace("target_", "Target").replace("unknown", "Unknown")
+					top_score = _get(targets[-1], "last_score", 0.0)
+
+				is_completed = bool(sequence_result_summary.get("completed", False))
+				ts = datetime.now(timezone.utc).isoformat()
+				
+				final_response = {
+					"timestamp": ts,
+					"session_id": file_session_id,
+					"frame_index": sequence_result_summary.get("processed_frames", 0),
+					"decision_type": "sequence_service",
+					"scores": scores,
+					"state": {
+						"completed_labels": completed_labels,
+						"state_machine_allowed": is_completed,
+						"event_type": "accepted" if is_completed else "ignored",
+						"final_label": final_label,
+						"target_times": target_times,
+					},
+					"decision": {
+						"top1_score": top_score
+					},
+					"db_path": str(service.config.db_path)
+				}
+
+				try:
+					from db.database import insert_log as db_insert_log, DB_PATH
+					n_targets = len(parsed_target_order or ["target_1", "target_2", "target_3", "target_4"])
+					completed_count = len(completed_labels)
+					db_insert_log(
+						source_type="video",
+						confirmed_state="accepted" if is_completed else "ignored",
+						predicted_label=final_label or "unknown",
+						confidence=top_score or 0.0,
+						anomaly_flag=not is_completed,
+						file_path=filename,
+						cam_id="",
+						target_idx=completed_count,
+						extra=final_response,
+						timestamp=ts,
+						db_path=DB_PATH,
+					)
+				except Exception as db_err:
+					import traceback
+					print(f"DB INSERT ERROR: {db_err}")
+					with open("error_log.txt", "a", encoding="utf-8") as f:
+						f.write(f"DB INSERT ERROR: {db_err}\n{traceback.format_exc()}\n")
+
 				results.append(
 					{
 						**operational_response_to_log(
@@ -262,8 +348,8 @@ async def inspect_image(
 							source_type="operational_video_upload",
 							file_path=filename,
 						),
-						"frame_count": sequence_result.get("frame_count"),
-						"operational_detail": sequence_result,
+						"frame_count": sequence_result_summary.get("processed_frames", 0),
+						"operational_detail": sequence_result_summary,
 					}
 				)
 			else:
@@ -276,6 +362,9 @@ async def inspect_image(
 					}
 				)
 		except Exception as exc:
+			import traceback
+			with open("error_log.txt", "a", encoding="utf-8") as f:
+				f.write(f"GLOBAL UPLOAD ERROR: {exc}\n{traceback.format_exc()}\n")
 			results.append(
 				{
 					"file": filename,

@@ -307,13 +307,16 @@ class OperationalInferenceService:
 		reinspect_performed: bool = False,
 		reinspect_summary: dict[str, object] | None = None,
 		save_artifacts: bool | None = None,
+		save_to_db: bool = True,
 	) -> FrameInferenceResult:
+		# artifacts는 target 확정 여부와 무관하게 save_to_db 조건에 따라 저장
+		artifact_enabled = save_to_db and (self.config.save_artifacts if save_artifacts is None else save_artifacts)
 		artifacts = self._save_artifacts(
 			session_id=session_id,
 			frame_index=frame_index,
 			image_bgr=image_bgr,
 			preprocess_result=core.preprocess_result,
-			enabled=self.config.save_artifacts if save_artifacts is None else save_artifacts,
+			enabled=artifact_enabled,
 		)
 		result = FrameInferenceResult(
 			session_id=session_id,
@@ -331,7 +334,8 @@ class OperationalInferenceService:
 			initial_decision=initial_decision,
 			preprocess_metadata=core.preprocess_metadata,
 		)
-		self.store.insert_frame_result(result)
+		if save_to_db:
+			self.store.insert_frame_result(result)
 		return result
 
 	def infer_image(
@@ -464,6 +468,7 @@ class OperationalInferenceService:
 							}
 						)
 					aux_state = self._auxiliary_state(session_id, next_index, next_decision)
+					# reinspect 보조 프레임은 target 확정이 아니므로 DB에 저장하지 않음
 					results.append(
 						self._build_logged_result(
 							session_id=session_id,
@@ -473,6 +478,7 @@ class OperationalInferenceService:
 							decision=next_decision,
 							state=aux_state,
 							save_artifacts=save_artifacts,
+							save_to_db=False,
 						)
 					)
 					consumed_until = next_index
@@ -498,6 +504,8 @@ class OperationalInferenceService:
 				}
 
 			state = state_machine.apply(decision)
+			# target으로 확정된 프레임(state_machine_allowed=True, event_type="accepted")만 DB에 저장
+			is_confirmed_target = state.state_machine_allowed and state.event_type == "accepted"
 			results.append(
 				self._build_logged_result(
 					session_id=session_id,
@@ -510,12 +518,26 @@ class OperationalInferenceService:
 					reinspect_performed=reinspect_performed,
 					reinspect_summary=reinspect_summary,
 					save_artifacts=save_artifacts,
+					save_to_db=False,
 				)
 			)
 			frame_index = max(consumed_until + 1, frame_index + 1)
 
 		ordered_results = sorted(results, key=lambda item: item.frame_index)
-		final_result = ordered_results[-1].response_dict()
+		final_result_obj = ordered_results[-1]
+
+		# 시퀀스 전체의 각 타겟별 최고 Confidence 점수를 추출
+		max_scores = { "Target1": 0.0, "Target2": 0.0, "Target3": 0.0, "Target4": 0.0 }
+		for r in ordered_results:
+			for t in max_scores.keys():
+				if t in r.scores:
+					max_scores[t] = max(max_scores[t], float(r.scores[t]))
+		
+		# 최종 요약 레코드에 최고 점수를 기록하고, DB에 단일 레코드로 저장 (비디오당 1행)
+		final_result_obj.scores = max_scores
+		self.store.insert_frame_result(final_result_obj)
+
+		final_result = final_result_obj.response_dict()
 		return {
 			"session_id": session_id,
 			"mode": "sequence",
