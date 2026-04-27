@@ -401,6 +401,21 @@ async def _process_frame_envelope(
 			),
 		)
 		payload = operational_result_to_frontend_payload(response)
+		if response.get("ambiguous") or response.get("reinspect_needed") or response.get("unknown"):
+			logger.info(
+				"[%s] decision=%s pred=%s top1=%s/%s top2=%s/%s margin=%s scores=%s thresholds=%s reason=%s",
+				camera_id,
+				response.get("decision_type"),
+				response.get("predicted_label"),
+				response.get("decision", {}).get("top1_label"),
+				response.get("decision", {}).get("top1_score"),
+				response.get("decision", {}).get("top2_label"),
+				response.get("decision", {}).get("top2_score"),
+				response.get("decision", {}).get("margin"),
+				response.get("scores"),
+				response.get("thresholds"),
+				response.get("decision", {}).get("reason"),
+			)
 	except Exception as exc:
 		logger.exception("stream inference failed for %s", camera_id)
 		payload = {
@@ -462,6 +477,21 @@ async def _run_inference_task(
 			),
 		)
 		payload = operational_result_to_frontend_payload(response)
+		if response.get("ambiguous") or response.get("reinspect_needed") or response.get("unknown"):
+			logger.info(
+				"[%s] decision=%s pred=%s top1=%s/%s top2=%s/%s margin=%s scores=%s thresholds=%s reason=%s",
+				camera_id,
+				response.get("decision_type"),
+				response.get("predicted_label"),
+				response.get("decision", {}).get("top1_label"),
+				response.get("decision", {}).get("top1_score"),
+				response.get("decision", {}).get("top2_label"),
+				response.get("decision", {}).get("top2_score"),
+				response.get("decision", {}).get("margin"),
+				response.get("scores"),
+				response.get("thresholds"),
+				response.get("decision", {}).get("reason"),
+			)
 	except Exception as exc:
 		logger.exception("stream inference failed for %s", camera_id)
 		payload = {
