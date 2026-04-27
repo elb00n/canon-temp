@@ -1929,7 +1929,7 @@ export default function App() {
       {/* 헤더 */}
       <header className="flex items-center justify-between h-14 px-4 bg-[#27272a] border-b-2 border-[#E50012] shrink-0">
         <div className="flex items-center gap-4">
-          <img src="/canon_icon.png" alt="Canon Logo" width={100} height={24}
+          <img src="/Canon_icon.svg" alt="Canon Logo" width={100} height={24}
             className="object-contain cursor-pointer hover:opacity-80 transition-opacity"
             onClick={handleLogoClick}
           />
