@@ -3,8 +3,8 @@ import axios from "axios";
 import {
   Camera, Settings, Activity, BoxSelect, Cpu, ScanSearch, CheckCircle2,
   Video, XCircle, Globe, X, Image as ImageIcon, Server, ShieldAlert,
-  Database, RefreshCw, Save, ChevronRight, ChevronLeft,
-  Smartphone, Search, ShieldCheck, Lock
+  Database, RefreshCw, Save, ChevronRight,
+  Lock
 } from "lucide-react";
 import { useAppStore } from "./store";
 import type { ImageLog, CameraData } from "./store";
@@ -958,7 +958,7 @@ function MobileSourceView({ onExit }: { onExit: () => void }) {
 export default function App() {
   const { 
     language, setSettingsOpen, liveData, updateLiveData, imageLogs, 
-    addImageLog, setAdminOpen, isAdminAuth, setAdminAuth, isDevAuth 
+    addImageLog, setAdminOpen, isAdminAuth, isDevAuth 
   } = useAppStore();
   const t = locales[language];
   const [wsConnected, setWsConnected] = useState(false);

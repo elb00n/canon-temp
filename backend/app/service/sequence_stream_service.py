@@ -18,7 +18,7 @@ from app.core.config import SETTINGS
 from app.core.paths import ASSET_WEIGHTS_DIR, SEQUENCE_STREAM_RUNS_DIR, yolo_weight_file
 from app.models.target_model import DEFAULT_THRESHOLD, get_target_sequence_settings, get_target_threshold
 from app.models.warping import YoloScreenWarper
-from app.service.sequence_db import DEFAULT_DB_PATH, upsert_sequence_run
+from db.database import DEFAULT_DB_PATH, upsert_sequence_run
 from app.service.sequence_service import FrameRecord, SequenceService, TargetContext, TargetStepResult, VideoSequenceSummary, append_summary_csv, ensure_dir
 from app.service.target_service import TargetModelHandle, TargetService
 

@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { Language, CameraData, ImageLog } from './types';
+import type { Language, CameraData, ImageLog } from './types';
+
+export type { Language, CameraData, ImageLog } from './types';
 
 interface AppState {
   language: Language;
